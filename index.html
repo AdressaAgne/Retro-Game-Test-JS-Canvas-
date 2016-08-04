@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game test</title>
+    <style>
+        * {
+            margin: 0px;
+            padding: 0px;
+            outline: none;
+        }
+        body{
+            background-color: black;
+            overflow: hidden;
+        }
+        #game{
+            height: 100vh;
+            margin-left: 50%;
+            transform: translateX(-50%);
+            margin-right: -50%;
+            cursor: none;
+        }
+        canvas, img {
+            image-rendering: optimizeSpeed;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+            image-rendering: pixelated;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    
+    <script src="js/min/main-min.js"></script>
+</body>
+</html>
