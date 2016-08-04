@@ -1,7 +1,7 @@
 # Retro Game Test
 
 
-![Game Screenshot](http://i.imgur.com/BafVzZ1.png "Game Screenshot")
+![Game Screenshot](http://i.imgur.com/BQoqON7.png "Game Screenshot")
 
 This is a test to see if i could make a game in canvas. I want to make a game for my Web Development Bacholer Assignment, so this is to see if i got the skills to pay the bills or rather get an A
 
