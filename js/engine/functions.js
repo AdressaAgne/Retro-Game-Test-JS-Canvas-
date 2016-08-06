@@ -46,6 +46,6 @@ function baseName(str){
         base = base.substring(0, base.lastIndexOf("."));
    return base;
 }
-function rng(min,max){
+function rng(min, max){
     return Math.floor(Math.random()*(max-min+1)+min);
 }

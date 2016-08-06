@@ -7,18 +7,18 @@ function animate() {
     
     // Short vars
     var c = Engine.fullMap;
-    var x = Engine.player.x;
-    var y = Engine.player.y;
-    
+    var cords = Engine.GetPlayerCords();
+    var x = cords.x;
+    var y = cords.y;
     
     // Walk keys
-    Engine.walk(keyCodes.w, 1);
-    Engine.walk(keyCodes.s, 3);
-    Engine.walk(keyCodes.a, 0);
-    Engine.walk(keyCodes.d, 2);
+    Engine.walk(keyCodes.w, 1, Engine.walkingDist);
+    Engine.walk(keyCodes.s, 3, Engine.walkingDist);
+    Engine.walk(keyCodes.a, 0, Engine.walkingDist);
+    Engine.walk(keyCodes.d, 2, Engine.walkingDist);
     
     
-    // e = search wall, pick up item
+    // E = search wall, pick up item
     if(pressedKeys[keyCodes.e]){
         onAction(x,   y-1, 1);
         onAction(x,   y+1, 3);

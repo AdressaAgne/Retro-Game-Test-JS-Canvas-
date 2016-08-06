@@ -22,5 +22,15 @@ var Maps = [
         file: texture.map3,
         next: 0,
         fog: 6,
+    },{
+        name: 'Kjetil bane',
+        file: texture.map4,
+        next: 0,
+        fog: 6,
+    },{
+        name: 'Testing Map',
+        file: texture.testMap,
+        next: 0,
+        fog: 30,
     }
 ];

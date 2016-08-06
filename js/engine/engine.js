@@ -40,13 +40,17 @@ var Engine = {
     player                  : {
         animCount   : 0,
         x           : 0,
-        y           : 0
+        y           : 0,
+        isWalking   : false,
     },
+    walkingDist             : .1,
     
     gui                     : {
         height      : (3 * 64), 
         width       : 0
     },
+    
+    Items           : {},
     
 ///////////////////////////////////
 //      BASE FUNCTIONS
@@ -66,21 +70,28 @@ var Engine = {
             for (var y in this.fullMap[x]) {
                 var item = this.fullMap[x][y];
 
-                if(item.block_id.texture !== false){
+                if(typeof item.block_id == 'undefined'){
+                    console.log(item)
+                    this.allowRender = false;
+                }
                     if(item.block_id.type == 'player' || item.block_id.type == 'item' || item.block_id.type == 'creature') this.drawFromSprite(MapObjects['ffffff'], item.x, item.y);
                     
                     
                     if(typeof item.block_id.anim !== 'undefined'){
 
-                        if(typeof item.animCount == 'undefined') item.animCount = 0;
+                        if(typeof item.animCount == 'undefined') item.animCount = rng(0, item.block_id.anim.length-3);
                         this.drawFromAnimSprite(item.block_id.anim[item.animCount], item.x, item.y);
                         
-                        if(this.count == 0) item.animCount++;
-                        if(this.count == 0) if(item.animCount >= item.block_id.anim.length) item.animCount = 0;
+                        if(this.count == 0){
+                            ++item.animCount;
+                            if(item.animCount >= item.block_id.anim.length){
+                                item.animCount = 0;
+                            }
+                        }
                         
                     } else {
-                        if(item.block_id.type == 'item') this.drawFromSprite(item.block_id, item.x, item.y);
-                        if(item.block_id.type == 'block') this.drawFromSprite(item.block_id, item.x, item.y);
+                        this.drawFromSprite(item.block_id, item.x, item.y);
+                        this.drawFromSprite(item.block_id, item.x, item.y);
                     }
                     
                     // Triggers every tic
@@ -93,10 +104,6 @@ var Engine = {
                        item.block_id.onRenderFull.bind(item)();
                     }
                     
-                } else {
-                    this.ctx.fillStyle = "#FF0000";
-                    this.ctx.fillRect(item.x * 64, item.y * 64, 64, 64);
-                }
             } // End Y axis
         } // End X axis
         
@@ -148,24 +155,63 @@ var Engine = {
                 if(color == 'ff0000') {
                     this.player.x = x;
                     this.player.y = y;
+                    
+                    var d = {'x' : x,
+                         'y' : y,
+                         'block_id' : MapObjects['ffffff'],
+                         'color' : color
+                        };
+                    
                 }
                 
                 this.fullMap[x][y] = d;
             }
         }
+        // Switching blocks so its nicer
+        for(var x = 0; x < Map.width; x++){
+            for(var y = 0; y < Map.height; y++){
+                var bID = this.fullMap[x][y];
+
+                if(typeof bID.block_id.alternative3D !== 'undefined'){ // if block has alternative as edge
+                    if(typeof this.fullMap[x][y+1] !== 'undefined'){ // if its not end of map
+                        
+                         if(this.fullMap[x][y+1].block_id.solid == false  || 
+                            this.fullMap[x][y+1].block_id.name == 'water' ||
+                            this.fullMap[x][y+1].block_id.name == 'lava') {
+                            
+                            this.fullMap[x][y].block_id = bID.block_id.alternative3D()[rng(0, bID.block_id.alternative3D().length-1)];   
+                         }
+                        
+                    }
+                } 
+                
+                if(typeof bID.block_id.alternative !== 'undefined'){ // if block has alternative
+                    var blocks = bID.block_id.alternative();
+                    blocks.push(bID.block_id);
+                    bID.block_id = blocks[rng(0, blocks.length - 1)];
+                } 
+                
+                
+            }
+        }
+        
+        
         this.allowRender = true;
         return mapData;
     },
     
     // texture loading
     init : function(){
-        // settings base settings before map
+        // setting base settings before map
         this.canvas.width = (16 * 64);
         this.canvas.height = (16 * 64);
         this.drawLoading('Loading... 0%');
         
         var t = Object.keys(texture).length;
         var i = 0;
+        
+        
+        // Loading Textures
         for (var key in texture) {
             if (!texture.hasOwnProperty(key)) continue;
             var src = texture[key];
@@ -283,8 +329,11 @@ Engine.drawPlayer = function(x, y){
     if(typeof this.player.animCount == 'undefined') this.player.animCount = 0;
 
     if(this.player.animCount >= id.facing[this.facing].length) this.player.animCount = 0;
-
-    this.ctx.drawImage(texture.sprite, id.facing[this.facing][this.player.animCount].x * 16, id.facing[this.facing][this.player.animCount].y * 16, 16, 16, x * 64, y * 64, 64, 64);
+    if(this.player.isWalking){
+        this.ctx.drawImage(texture.sprite, id.facing[this.facing][this.player.animCount].x * 16, id.facing[this.facing][this.player.animCount].y * 16, 16, 16, x * 64, y * 64 - 16, 64, 64);    
+    } else {
+        this.ctx.drawImage(texture.sprite, id.facing[this.facing][this.player.animCount].x * 16, id.facing[this.facing][this.player.animCount].y * 16, 16, 16, x * 64, y * 64 - 16, 64, 64);
+    }
 
     if(this.count == 0) this.player.animCount++;
 }
@@ -301,6 +350,35 @@ Engine.drawFromAnimSprite = function(cords, x, y){
 //      MAP FUNCTIONS
 ///////////////////////////////////
 
+
+Engine.moveRngBlock = function(item){
+    this.moveBlockDirection(item, rng(0,3));
+}
+
+Engine.moveBlockDirection = function(item, dir){
+    var x = item.x;
+    var y = item.y;
+
+    if(dir == 0) --x;
+    if(dir == 1) --y;
+    if(dir == 2) ++x;
+    if(dir == 3) ++y;
+
+    var newItem = this.fullMap[x][y];
+
+    if(newItem.block_id.solid) return;
+    
+    if(typeof newItem.block_id == 'undefined') return;
+    
+    if(newItem.block_id !== MapObjects['ffffff']) return;
+    
+    this.switchBlock(item, newItem);
+    
+}
+
+Engine.switchBlock = function(block, newBlock){
+    
+}
 
 //Go one level up on map
 
@@ -338,28 +416,40 @@ Engine.LoadNewMap = function(map){
 
 // Move player 1 step in a direction
 // Should make a smooth movement...
-Engine.walk = function(keyCode, dir){
+Engine.walk = function(keyCode, dir, dist){
     if(!pressedKeys[keyCode]) return;
     
-    var x = this.player.x;
-    var y = this.player.y;
+    if(this.facing !== dir){
+        this.facing = dir;
+        return;
+    }
+    
+    var cords = this.GetPlayerCords();
+    var x = cords.x;
+    var y = cords.y;
     
     if(dir == 0) --x;
     if(dir == 1) --y;
     if(dir == 2) ++x;
     if(dir == 3) ++y;
+
     
-    if(!this.fullMap[x][y].block_id.solid && this.facing == dir && this.count == 0){
+    if(!this.fullMap[x][y].block_id.solid && this.count == 0){
         if(dir == 0 || dir == 2) this.player.x = x;
         if(dir == 1 || dir == 3) this.player.y = y;
+        this.player.isWalking = true;
         updatePosition(x, y, true);
-    } else {
-        this.facing = dir;
-        
-        // Might not be nessesary
-        updatePosition(x, y, false);
-    }
+        return;
+    } 
+    this.player.isWalking = false;
+    updatePosition(x, y, false);
 } 
+
+Engine.GetPlayerCords = function(){
+    var x = Math.floor(this.player.x);
+    var y = Math.floor(this.player.y);
+    return {x: x, y: y};
+}
 
 // Add item to inventory
 Engine.addToInvetory = function(block_id){
