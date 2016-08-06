@@ -289,9 +289,7 @@ addItem('2f91a6', {
     type        : 'item',
     x           : 3,
     y           : 6,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
         // Pick Up water
         changeOnUse(this, ItemsList.water, ItemsList.dirt, ItemsList.bucket_filled_water);
@@ -309,9 +307,7 @@ addItem('19454d', {
     type        : 'item',
     x           : 6,
     y           : 6,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
         changeOnUse(this, ItemsList.dirt, ItemsList.swomp_2, ItemsList.bucket);
         changeOnUse(this, ItemsList.fire, ItemsList.dirt, ItemsList.bucket);
@@ -326,9 +322,7 @@ addItem('7d9ca2', {
     type        : 'item',
     x           : 3,
     y           : 5,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
 
         changeOnUse(this, ItemsList.water, ItemsList.dirt, ItemsList.iron_bucket_water);
@@ -348,9 +342,7 @@ addItem('6a868b', {
     type        : 'item',
     x           : 5,
     y           : 5,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
         changeOnUse(this, ItemsList.dirt, ItemsList.water, ItemsList.iron_bucket);
         changeOnUse(this, ItemsList.fire, ItemsList.dirt, ItemsList.iron_bucket);
@@ -366,9 +358,7 @@ addItem('556b6f', {
     type        : 'item',
     x           : 4,
     y           : 5,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
         changeOnUse(this, ItemsList.dirt, ItemsList.lava, ItemsList.iron_bucket);
         changeOnUse(this, ItemsList.swomp, ItemsList.dirt, ItemsList.iron_bucket);
@@ -383,9 +373,7 @@ addItem('3e4f52', {
     type        : 'item',
     x           : 6,
     y           : 5,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
         changeOnUse(this, ItemsList.dirt, ItemsList.swomp_2, ItemsList.iron_bucket);
         changeOnUse(this, ItemsList.fire, ItemsList.dirt, ItemsList.iron_bucket);
@@ -401,9 +389,7 @@ addItem('256d7c', {
     type        : 'item',
     x           : 5,
     y           : 6,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
 
         changeOnUse(this, ItemsList.dirt, ItemsList.water, ItemsList.bucket);
@@ -418,9 +404,7 @@ addItem('1e5661', {
     type        : 'item',
     x           : 4,
     y           : 6,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
         changeOnUse(this, ItemsList.water, ItemsList.dirt, ItemsList.bucket);
         changeOnUse(this, ItemsList.dirt, ItemsList.lava, ItemsList.bucket);
@@ -433,9 +417,7 @@ addItem('eddfae', {
     type        : 'item',
     x           : 6,
     y           : 9,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
         removeOnUse(this, ItemsList.door_closed, ItemsList.door_open);
     },
@@ -580,9 +562,7 @@ addItem('a048dd', {
     type        : 'item',
     x           : 3,
     y           : 9,
-    onActionOver : function(){
-        if(Engine.addToInvetory(this.block_id)) this.block_id = ItemsList.dirt;
-    },
+    canPickUp   : true,
     onUse : function(){
         if(this.block_id.type == 'creature'){
             this.hp--;

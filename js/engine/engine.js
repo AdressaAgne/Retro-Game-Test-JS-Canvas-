@@ -25,7 +25,7 @@ var Engine = {
     CurrentMap              : null,
     currentMapNr            : 0,
     fullMap                 : {},
-    startMap                : 0,
+    startMap                : 4,
 // n * .5 of a block                
     fog                     : 4, 
     facing                  : 3,

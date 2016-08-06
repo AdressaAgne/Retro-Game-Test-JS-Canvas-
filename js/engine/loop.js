@@ -26,9 +26,16 @@ function animate() {
         onAction(x-1, y, 0);
         
         pressedKeys[keyCodes.e] = false;
+        var bID = Engine.fullMap[x][y];
         
-        if(typeof Engine.fullMap[x][y].block_id.onActionOver === 'function') Engine.fullMap[x][y].block_id.onActionOver.bind(Engine.fullMap[x][y])();
-        if(typeof Engine.fullMap[x][y].block_id.onUseOver === 'function') Engine.fullMap[x][y].block_id.onUseOver.bind(Engine.fullMap[x][y])();
+        //Trigger onActionOver and onActionUse
+        if(typeof bID.block_id.onActionOver === 'function') bID.block_id.onActionOver.bind(bID)();
+        if(typeof bID.block_id.onUseOver === 'function') bID.block_id.onUseOver.bind(bID)();
+        
+        // canPickUp function
+        if(typeof bID.block_id.canPickUp !== 'undefiend'){
+            if(bID.block_id.canPickUp) if(Engine.addToInvetory(bID.block_id)) bID.block_id = ItemsList.dirt;
+        }
     }
     
     // Q = Use inventory Item
