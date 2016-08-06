@@ -4,7 +4,7 @@ function onAction(x, y, direction){
 
     if(typeof Engine.fullMap[x][y].block_id.onAction !== 'function') return;
     
-    Engine.fullMap[x][y].block_id.onAction.bind(Engine.fullMap[x, y])();
+    Engine.fullMap[x][y].block_id.onAction.bind(Engine.fullMap[x][y])();
     Engine.fullMap[x][y].isSearched = true;
 }
 
@@ -13,6 +13,8 @@ function onUse(x, y, direction){
     if(direction !== Engine.facing) return;
     
     if(Engine.invetory.length == 0) return;
+    
+    if(typeof Engine.invetory[Engine.selectedInvetorySlot] == 'undefined') return;
     
     if(typeof MapObjects[Engine.invetory[Engine.selectedInvetorySlot].uuid].onUse !== 'undefined'){
         var id = Engine.invetory[Engine.selectedInvetorySlot].uuid;
@@ -24,7 +26,7 @@ function onUse(x, y, direction){
 function updatePosition(x, y, isOnSpot){
     if(typeof Engine.fullMap[x][y].block_id.onWalkOver === 'function' && isOnSpot){
         Engine.fullMap[x][y].block_id.onWalkOver.bind(Engine.fullMap[x][y])(); 
-        
+       
         
     } else if(typeof Engine.fullMap[x][y].block_id.onSolidHit === 'function' && !isOnSpot){
         Engine.fullMap[x][y].block_id.onSolidHit.bind(Engine.fullMap[x][y])(); 

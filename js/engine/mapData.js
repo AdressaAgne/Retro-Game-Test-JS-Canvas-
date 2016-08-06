@@ -14,7 +14,7 @@
 // Animation use: anim : [ {x: 0, y: 0}, {etc..} ], non animation use: x : 0, y : 0
 
 var MapObjects = {};
-    
+
 addItem('000000', {
     name        : 'wall',
     solid       : true,
@@ -282,6 +282,36 @@ addItem('ff6600', {
     ],
 });
 
+addItem('lava_steam', {
+    name        : 'lava_steam',
+    solid       : true,
+    moveable    : false,
+    type        : 'block',
+    anim        : [
+        {x: 9, y: 3},
+        {x: 10, y: 3},
+        {x: 11, y: 3},
+    ],
+    onRender : function(){
+        if(this.animCount == 0) this.block_id = ItemsList.lava;
+    }
+});
+
+addItem('steam', {
+    name        : 'steam',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    anim        : [
+        {x: 9, y: 2},
+        {x: 10, y: 2},
+        {x: 11, y: 2},
+    ],
+    onRender : function(){
+        if(this.animCount == 0) this.block_id = ItemsList.dirt;
+    }
+});
+
 addItem('2f91a6', {
     name        : 'Bucket',
     solid       : false,
@@ -345,8 +375,8 @@ addItem('6a868b', {
     canPickUp   : true,
     onUse : function(){
         changeOnUse(this, ItemsList.dirt, ItemsList.water, ItemsList.iron_bucket);
-        changeOnUse(this, ItemsList.fire, ItemsList.dirt, ItemsList.iron_bucket);
-        removeOnUse(this, ItemsList.lava, ItemsList.dirt);
+        changeOnUse(this, ItemsList.fire, ItemsList.steam, ItemsList.iron_bucket);
+        changeOnUse(this, ItemsList.lava, ItemsList.lava_steam, ItemsList.iron_bucket);
 
     },
 
@@ -376,7 +406,7 @@ addItem('3e4f52', {
     canPickUp   : true,
     onUse : function(){
         changeOnUse(this, ItemsList.dirt, ItemsList.swomp_2, ItemsList.iron_bucket);
-        changeOnUse(this, ItemsList.fire, ItemsList.dirt, ItemsList.iron_bucket);
+        changeOnUse(this, ItemsList.fire, ItemsList.steam, ItemsList.iron_bucket);
         changeOnUse(this, ItemsList.lava, ItemsList.dirt, ItemsList.iron_bucket);
 
     },
@@ -391,10 +421,9 @@ addItem('256d7c', {
     y           : 6,
     canPickUp   : true,
     onUse : function(){
-
         changeOnUse(this, ItemsList.dirt, ItemsList.water, ItemsList.bucket);
-        changeOnUse(this, ItemsList.fire, ItemsList.dirt, ItemsList.bucket);
-
+        changeOnUse(this, ItemsList.fire, ItemsList.steam, ItemsList.bucket);
+        changeOnUse(this, ItemsList.lava, ItemsList.lava_steam, ItemsList.bucket);
     },
 });
 addItem('1e5661', {
@@ -439,6 +468,155 @@ addItem('513906', {
     x           : 0,
     y           : 4,
 });
+addItem('bb9983', {
+    name        : 'lever_off',
+    solid       : true,
+    moveable    : false,
+    type        : 'item',
+    x           : 2,
+    y           : 4,
+    onAction    : function(){
+        this.block_id = ItemsList.lever_on;
+        if(Engine.doors.hasPower){
+            for(var d = 0; d < Engine.doors.doors.length;d++){
+                var door = Engine.doors.doors[d];
+                Engine.fullMap[door.x][door.y].block_id = ItemsList.iron_door_closed;
+            }
+        
+            Engine.fullMap[Engine.doors.doors[Engine.doors.selectedDoor].x][Engine.doors.doors[Engine.doors.selectedDoor].y].block_id = ItemsList.iron_door_open;
+        }
+    }
+});
+addItem('lever_on', {
+    name        : 'lever_on',
+    solid       : true,
+    moveable    : false,
+    type        : 'item',
+    x           : 3,
+    y           : 4,
+    onAction    : function(){
+        this.block_id = ItemsList.lever_off;
+        if(Engine.doors.hasPower){
+            for(var d = 0; d < Engine.doors.doors.length;d++){
+                var door = Engine.doors.doors[d];
+                Engine.fullMap[door.x][door.y].block_id = ItemsList.iron_door_closed;
+            }
+        }
+    }
+});
+
+addItem('panel_off', {
+    name        : 'panel_off',
+    solid       : true,
+    moveable    : false,
+    type        : 'block',
+    x           : 10,
+    y           : 0,
+    onRender    : function(){
+        if(Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
+            this.block_id = ItemsList.panel_1;
+            Engine.doors.hasPower = true;
+            Engine.doors.selectedDoor = 0;
+        }
+    }
+});
+
+addItem('05eb76', {
+    name        : 'panel_1',
+    solid       : true,
+    moveable    : false,
+    type        : 'block',
+    x           : 11,
+    y           : 0,
+    onAction    : function(){
+        if(Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
+            this.block_id = ItemsList.panel_2;
+            Engine.doors.selectedDoor = 1;
+        }
+    },
+    onRender    : function(){
+        if(!Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
+            this.block_id = ItemsList.panel_off;
+            Engine.doors.hasPower = false;
+        }
+    }
+});
+addItem('panel_2', {
+    name        : 'panel_2',
+    solid       : true,
+    moveable    : false,
+    type        : 'block',
+    x           : 12,
+    y           : 0,
+    onAction    : function(){
+        if(Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
+            this.block_id = ItemsList.panel_3;
+            Engine.doors.selectedDoor = 2;
+        }
+    },
+    onRender    : function(){
+        if(!Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
+            this.block_id = ItemsList.panel_off;
+            Engine.doors.hasPower = false;
+        }
+    }
+});
+addItem('panel_3', {
+    name        : 'panel_3',
+    solid       : true,
+    moveable    : false,
+    type        : 'block',
+    x           : 13,
+    y           : 0,
+    onAction    : function(){
+        if(Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
+            this.block_id = ItemsList.panel_1;
+            Engine.doors.selectedDoor = 0;
+        }
+    },
+    onRender    : function(){
+        if(!Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
+            this.block_id = ItemsList.panel_off;
+            Engine.doors.hasPower = false;
+        }
+    }
+});
+
+addItem('f0ca18', {
+    name        : 'battery',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    isPowerSource : true,
+    x           : 11,
+    y           : 1,
+    canPickUp   : true,
+    onUse    : function(){
+        if(this.block_id == ItemsList.dirt){
+            Engine.removeSelectedInvetoryitem();
+            this.block_id = ItemsList.battery;
+        }
+    }
+});
+
+addItem('2d2d2d', {
+    name        : 'iron_door_closed',
+    solid       : true,
+    moveable    : false,
+    type        : 'block',
+    x           : 12,
+    y           : 1,
+});
+
+addItem('iron_door_open', {
+    name        : 'iron_door_open',
+    solid       : false,
+    moveable    : false,
+    type        : 'block',
+    x           : 13,
+    y           : 1,
+});
+
 addItem('232e1d', {
     name        : 'Snake',
     drop        : function(){
@@ -531,7 +709,7 @@ addItem('464268', {
     moveable    : false,
     type        : 'creature',
     drop        : function(){
-      return [ItemsList.gold_coin, ItemsList.silver_coin];  
+      return [ItemsList.gold_coin, ItemsList.silver_coin, ItemsList.bronze_coin];  
     },
     anim        : [
         {x: 8, y: 8},
@@ -624,11 +802,15 @@ addItem('swomp', {
 });
 
 //changeOnUse(this, ItemsList.dirt, ItemsList.water, ItemsList.bucket);
-function changeOnUse(b_id, b_use, b_replacement, i_replcement){
+function changeOnUse(b_id, b_use, b_replacement, i_replcement, callback){
     if(b_id.block_id != b_use) return;
         Engine.changeInvetoryItem(i_replcement);
         b_id.block_id = b_replacement;
         resetAnimation(b_id); // reset animation
+    
+        if(typeof callback == 'function'){
+            callback.bind(b_id)();
+        }
 }
 
 function removeOnUse(b_id, b_use, b_replacement){

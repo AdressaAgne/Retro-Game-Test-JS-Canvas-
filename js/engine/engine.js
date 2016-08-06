@@ -45,6 +45,12 @@ var Engine = {
     },
     walkingDist             : .1,
     
+    doors                   : {
+        selectedDoor  : 0,
+        doors         : [],
+        hasPower      : false,
+    },
+    
     gui                     : {
         height      : (3 * 64), 
         width       : 0
@@ -71,38 +77,39 @@ var Engine = {
                 var item = this.fullMap[x][y];
 
                 if(typeof item.block_id == 'undefined'){
-                    console.log(item)
+                    console.log(item, item.block_id)
                     this.allowRender = false;
                 }
-                    if(item.block_id.type == 'player' || item.block_id.type == 'item' || item.block_id.type == 'creature') this.drawFromSprite(MapObjects['ffffff'], item.x, item.y);
+                
+                if(item.block_id.type == 'player' || item.block_id.type == 'item' || item.block_id.type == 'creature') this.drawFromSprite(MapObjects['ffffff'], item.x, item.y);
                     
                     
-                    if(typeof item.block_id.anim !== 'undefined'){
+                if(typeof item.block_id.anim !== 'undefined'){
 
-                        if(typeof item.animCount == 'undefined') item.animCount = rng(0, item.block_id.anim.length-3);
-                        this.drawFromAnimSprite(item.block_id.anim[item.animCount], item.x, item.y);
-                        
-                        if(this.count == 0){
-                            ++item.animCount;
-                            if(item.animCount >= item.block_id.anim.length){
-                                item.animCount = 0;
-                            }
+                    if(typeof item.animCount == 'undefined') item.animCount = rng(0, item.block_id.anim.length-3);
+                    this.drawFromAnimSprite(item.block_id.anim[item.animCount], item.x, item.y);
+
+                    if(this.count == 0){
+                        ++item.animCount;
+                        if(item.animCount >= item.block_id.anim.length){
+                            item.animCount = 0;
                         }
-                        
-                    } else {
-                        this.drawFromSprite(item.block_id, item.x, item.y);
-                        this.drawFromSprite(item.block_id, item.x, item.y);
                     }
-                    
-                    // Triggers every tic
-                    if(typeof item.block_id.onRender == 'function'){ 
-                       if(this.count == 0) item.block_id.onRender.bind(item)();
-                    }
-                    
-                    //Triggers every frame
-                    if(typeof item.block_id.onRenderFull == 'function'){
-                       item.block_id.onRenderFull.bind(item)();
-                    }
+
+                } else {
+                    this.drawFromSprite(item.block_id, item.x, item.y);
+                    this.drawFromSprite(item.block_id, item.x, item.y);
+                }
+
+                // Triggers every tic
+                if(typeof item.block_id.onRender == 'function'){ 
+                   if(this.count == 0) item.block_id.onRender.bind(item)();
+                }
+
+                //Triggers every frame
+                if(typeof item.block_id.onRenderFull == 'function'){
+                   item.block_id.onRenderFull.bind(item)();
+                }
                     
             } // End Y axis
         } // End X axis
@@ -177,6 +184,7 @@ var Engine = {
                         
                          if(this.fullMap[x][y+1].block_id.solid == false  || 
                             this.fullMap[x][y+1].block_id.name == 'water' ||
+                            this.fullMap[x][y+1].block_id.type == 'item' ||
                             this.fullMap[x][y+1].block_id.name == 'lava') {
                             
                             this.fullMap[x][y].block_id = bID.block_id.alternative3D()[rng(0, bID.block_id.alternative3D().length-1)];   
@@ -191,6 +199,9 @@ var Engine = {
                     bID.block_id = blocks[rng(0, blocks.length - 1)];
                 } 
                 
+                if(bID.block_id == ItemsList.iron_door_closed){
+                    this.doors.doors.push(bID);
+                }
                 
             }
         }
@@ -342,7 +353,8 @@ Engine.drawFromSprite = function(id, x, y){
     this.ctx.drawImage(texture.sprite, id.x * 16, id.y * 16, 16, 16, x * 64, y * 64, 64, 64);
 }
 
-Engine.drawFromAnimSprite = function(cords, x, y){     
+Engine.drawFromAnimSprite = function(cords, x, y){
+    if(typeof cords == 'undefined') return;
     this.ctx.drawImage(texture.sprite, cords.x * 16, cords.y * 16, 16, 16, x * 64, y * 64, 64, 64);
 }
 
@@ -425,29 +437,33 @@ Engine.walk = function(keyCode, dir, dist){
     }
     
     var cords = this.GetPlayerCords();
-    var x = cords.x;
-    var y = cords.y;
+    var x = Number(this.player.x);
+    var y = Number(this.player.y);
     
-    if(dir == 0) --x;
-    if(dir == 1) --y;
-    if(dir == 2) ++x;
-    if(dir == 3) ++y;
+    if(dir == 0) x -= this.walkingDist;
+    if(dir == 1) y -= this.walkingDist;
+    if(dir == 2) x += this.walkingDist;
+    if(dir == 3) y += this.walkingDist;
+    
+    if(dir == 0) --cords.x;
+    if(dir == 1) --cords.y;
+    if(dir == 2) ++cords.x;
+    if(dir == 3) ++cords.y;
 
-    
-    if(!this.fullMap[x][y].block_id.solid && this.count == 0){
+    if(!this.fullMap[cords.x][cords.y].block_id.solid){
         if(dir == 0 || dir == 2) this.player.x = x;
         if(dir == 1 || dir == 3) this.player.y = y;
         this.player.isWalking = true;
-        updatePosition(x, y, true);
+        updatePosition(this.GetPlayerCords().x, this.GetPlayerCords().y, true);
         return;
-    } 
+    }
     this.player.isWalking = false;
-    updatePosition(x, y, false);
+    updatePosition(this.GetPlayerCords().x, this.GetPlayerCords().y, true);
 } 
 
 Engine.GetPlayerCords = function(){
-    var x = Math.floor(this.player.x);
-    var y = Math.floor(this.player.y);
+    var x = Math.round(this.player.x);
+    var y = Math.round(this.player.y);
     return {x: x, y: y};
 }
 
