@@ -4,6 +4,28 @@ var timeFPS,
 function animate() {
     // Request new frame if allowed
     if(Engine.allowRender) requestAnimFrame( animate );
+    Engine.ImageSmoothing(false);
+    
+    if(Engine.renderMenu) {
+        
+        if(pressedKeys[keyCodes.w] && Engine.menu.selectedButton > 0){
+            Engine.menu.selectedButton--;
+            pressedKeys[keyCodes.w] = false;
+        }
+        
+        if(pressedKeys[keyCodes.s] && Engine.menu.selectedButton < Engine.menu.buttons.length-1){
+            Engine.menu.selectedButton++;
+            pressedKeys[keyCodes.s] = false;
+        }
+        
+        if(pressedKeys[keyCodes.enter]){
+           Engine.menu.buttons[Engine.menu.selectedButton].press();
+            pressedKeys[keyCodes.enter] = false;
+        }
+            
+        Engine.RenderMenu();
+        return;
+    }
     
     // Short vars
     var c = Engine.fullMap;
@@ -20,11 +42,11 @@ function animate() {
     if(!pressedKeys[keyCodes.w] && !pressedKeys[keyCodes.s] &&  !pressedKeys[keyCodes.a] &&  !pressedKeys[keyCodes.d]){
         //Engine.player.isWalking = false;
     }
-    
-    if(!Engine.player.isWalking){
-        Engine.player.x = Math.round(Engine.player.x);
-        Engine.player.y = Math.round(Engine.player.y);
-    }
+//    
+//    if(!Engine.player.isWalking){
+//        Engine.player.x = Math.round(Engine.player.x);
+//        Engine.player.y = Math.round(Engine.player.y);
+//    }
     
     // E = search wall, pick up item
     if(pressedKeys[keyCodes.e]){
@@ -60,6 +82,16 @@ function animate() {
     
     for(var slot = 0; slot < 10; slot++){
         if(pressedKeys[keyCodes['n'+(slot+1)]]) Engine.selectedInvetorySlot = slot;
+    }
+    
+    // Debugging
+    if(pressedKeys[keyCodes.o]) {
+        Engine.debug.showPlayerBox = !Engine.debug.showPlayerBox;
+        pressedKeys[keyCodes.o] = false;
+    }
+    if(pressedKeys[keyCodes.i]) {
+        Engine.debug.showPlayerCords = !Engine.debug.showPlayerCords;
+        pressedKeys[keyCodes.i] = false;
     }
     
     // Render Game

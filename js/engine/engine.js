@@ -34,6 +34,11 @@ var Engine = {
     count                   : 0,
     maxCount                : 10, 
     
+    debug                   : {
+        showPlayerBox     : false,  
+        showPlayerCords   : false,  
+    },
+    
     invetory                : [],
     money                   : 0,
     selectedInvetorySlot    : 0,
@@ -58,6 +63,31 @@ var Engine = {
     
     Items           : {},
     
+    renderMenu      : true,
+    menu            : {
+        selectedButton  : 0,
+        buttons         : [
+            { 
+                text : 'Play Game',
+                press   : function(){
+                    Engine.renderMenu = false;
+                }
+            },
+            { 
+                text : 'How To Play',
+                press   : function(){
+                    Engine.renderHowToPlay = true;
+                }
+            },
+            { 
+                text : 'Credits',
+                press   : function(){
+                   Engine.renderCredits = true;
+                }
+            },
+        ],
+    },
+    
 ///////////////////////////////////
 //      BASE FUNCTIONS
 ///////////////////////////////////
@@ -68,7 +98,8 @@ var Engine = {
         // Clear screen for redrawing
         Engine.ctx.clearRect(0, 0, (this.CurrentMap.width * 64), (this.CurrentMap.height * 64));
 
-        this.ImageSmoothing(false);
+
+        
         
         for (var x in this.fullMap) {
             if (!this.fullMap.hasOwnProperty(x)) continue;
@@ -239,11 +270,14 @@ var Engine = {
                     this.fog = Maps[this.startMap].fog;
                     this.CurrentMap = this.Open(Maps[this.startMap].file);
                     // Calling Game Loop
-                    animate();
+                    this.startGame();
                 } 
             }.bind(this);
         }
     },
+    startGame : function(){
+        animate();
+    }
 }
 ///////////////////////////////////
 //      RENDER FUNCTIONS
@@ -288,6 +322,14 @@ Engine.RenderGUI = function(){
 
 // Render player
 Engine.RenderPlayer = function(){
+     var cords = this.GetPlayerCords();
+    if(this.debug.showPlayerBox){
+        this.drawFromSprite(ItemsList.test, cords.x, cords.y);
+    }
+    if(this.debug.showPlayerCords){
+        this.RenderText("#ffffff", "X: " + cords.x + "("+this.player.x.toFixed(1)+"), Y:" +cords.y + "("+this.player.y.toFixed(1)+")", 1 ,1);
+    }
+    
     this.drawPlayer(this.player.x, this.player.y);
 }
     
@@ -302,6 +344,29 @@ Engine.RenderText = function(color, text, x, y){
     this.ctx.fillStyle = color;
     this.ctx.font = "34px Verdana";
     this.ctx.fillText(text, x * 64, y * 64);
+}
+Engine.RenderTextPixels = function(color, text, x, y){
+    this.ctx.fillStyle = color;
+    this.ctx.font = "34px Verdana";
+    this.ctx.fillText(text, x, y);
+}
+Engine.RenderRect = function(color, x, y, w, h){
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(x, y, w, h);
+}
+
+Engine.RenderMenu = function(){
+    this.RenderRect("#ff8800", 0, 0, this.canvas.width, this.canvas.height);
+    this.drawFromTexture(texture.menu, 0, 0, 16, 19, 0, 0, 64);
+    
+    
+    this.drawFromTexture(texture.gui, 0, 8, 16, 16, 4.4, 1, 29);
+    
+    
+    for(var i = 0; i < this.menu.buttons.length; i++){
+        this.drawMenuButton(350 + (i*24*4), (i == this.menu.selectedButton), this.menu.buttons[i].text);
+    }
+    
 }
 
 
@@ -322,8 +387,15 @@ Engine.drawLoading = function(text){
 }
 
 // Draw Menu Screen
-Engine.drawMenu = function(){
-    //todo
+Engine.drawMenuButton = function(y, selected, text){
+    var button_size_x = 193;
+    var button_size_y = 23;
+    var StartPosY = selected == true ? 3 * 16 + 23 : 3 * 16;
+    var StartPosX = 256 - button_size_x;
+    var x = (256 - button_size_x) / 2 * 4;
+    this.ctx.drawImage(texture.gui, StartPosX, StartPosY, button_size_x, button_size_y, x, y, button_size_x*4, button_size_y*4);
+    
+    this.RenderTextPixels('#f8f8f8', text, x + (button_size_x/2), y+(button_size_y*2.5));
 }
 
 // Draw Death Screen
@@ -332,7 +404,12 @@ Engine.drawDeathScrenn = function(){
 }
 
 Engine.drawToInventory = function(id, slot){
-    this.ctx.drawImage(texture.sprite, id.x * 16, id.y * 16, 16, 16, 34 + slot * 84 - (slot*4), 18 * 64 - 20, 64, 64);
+        
+    if(typeof id.anim !== 'undefined'){
+        this.ctx.drawImage(texture.sprite, id.anim[0].x * 16, id.anim[0].y * 16, 16, 16, 34 + slot * 84 - (slot*4), 18 * 64 - 20, 64, 64);
+    }
+    this.ctx.drawImage(texture.sprite, id.x * 16, id.y * 16, 16, 16, 34 + slot * 84 - (slot*4), 18 * 64 - 20, 64, 64);    
+    
 }
 
 Engine.drawPlayer = function(x, y){
@@ -341,9 +418,9 @@ Engine.drawPlayer = function(x, y){
 
     if(this.player.animCount >= id.facing[this.facing].length) this.player.animCount = 0;
     if(this.player.isWalking){
-        this.ctx.drawImage(texture.sprite, id.facing[this.facing][this.player.animCount].x * 16, id.facing[this.facing][this.player.animCount].y * 16, 16, 16, x * 64, y * 64 - 16, 64, 64);    
+        this.ctx.drawImage(texture.sprite, id.facing[this.facing][this.player.animCount].x * 16, id.facing[this.facing][this.player.animCount].y * 16, 16, 16, x * 64, y * 64, 64, 64);    
     } else {
-        this.ctx.drawImage(texture.sprite, id.facing[this.facing][this.player.animCount].x * 16, id.facing[this.facing][this.player.animCount].y * 16, 16, 16, x * 64, y * 64 - 16, 64, 64);
+        this.ctx.drawImage(texture.sprite, id.facing[this.facing][this.player.animCount].x * 16, id.facing[this.facing][this.player.animCount].y * 16, 16, 16, x * 64, y * 64, 64, 64);
     }
 
     if(this.count == 0) this.player.animCount++;
@@ -351,6 +428,10 @@ Engine.drawPlayer = function(x, y){
 
 Engine.drawFromSprite = function(id, x, y){        
     this.ctx.drawImage(texture.sprite, id.x * 16, id.y * 16, 16, 16, x * 64, y * 64, 64, 64);
+}
+
+Engine.drawFromTexture = function(t, sx, sy, w, h, x, y, scale){        
+    this.ctx.drawImage(t, sx * 16, sy * 16, w * 16, h * 16, x * 64, y * 64, w * scale, h * scale);
 }
 
 Engine.drawFromAnimSprite = function(cords, x, y){
@@ -430,46 +511,100 @@ Engine.LoadNewMap = function(map){
 // Should make a smooth movement...
 Engine.walk = function(keyCode, dir, dist){
     if(!pressedKeys[keyCode]) return;
-    
     if(this.facing !== dir){
         this.facing = dir;
         return;
     }
+    this.walkDir(dir, dist);
+} 
+
+Engine.walkDir = function(dir, dist){
     
     var cords = this.GetPlayerCords();
     var x = Number(this.player.x);
     var y = Number(this.player.y);
     
-    if(dir == 0) x -= this.walkingDist;
-    if(dir == 1) y -= this.walkingDist;
-    if(dir == 2) x += this.walkingDist;
-    if(dir == 3) y += this.walkingDist;
+    var canWalk = true;
     
-    if(dir == 0) --cords.x;
-    if(dir == 1) --cords.y;
-    if(dir == 2) ++cords.x;
-    if(dir == 3) ++cords.y;
+    if(dir == 0){ // a
+        
+        --cords.x; 
+        x -= dist;
+    }
+    if(dir == 1){ // w
 
-    if(!this.fullMap[cords.x][cords.y].block_id.solid){
+        --cords.y;
+        y -= dist;
+    }
+    if(dir == 2){ // d
+
+        ++cords.x;
+        x += dist;
+    }
+    if(dir == 3){ // s
+        cords.y = Math.floor(cords.y);
+        ++cords.y;
+        y += dist;
+        
+    }
+    
+    if(this.fullMap[cords.x][cords.y].block_id.solid) canWalk = false;
+    
+    var mWalk = dist * 2;
+    if(!canWalk && (cords.y-1 > y) && dir == 3){
+        canWalk = true;
+    }
+    if(!canWalk && (cords.y+.7 < y + mWalk) && dir == 1){
+
+        canWalk = true;
+    }
+    if(!canWalk && (cords.x-.5 > x + mWalk) && dir == 2){
+
+        canWalk = true;
+    }
+    if(!canWalk && (cords.x+.5 < x - mWalk) && dir == 0){
+
+        canWalk = true;
+    }
+    
+    //console.log("x: ", cords.x, "y: ", cords.y);
+    
+    if(canWalk){
         if(dir == 0 || dir == 2) this.player.x = x;
         if(dir == 1 || dir == 3) this.player.y = y;
         this.player.isWalking = true;
         updatePosition(this.GetPlayerCords().x, this.GetPlayerCords().y, true);
-        return;
+        
     }
+    
     this.player.isWalking = false;
     updatePosition(this.GetPlayerCords().x, this.GetPlayerCords().y, true);
-} 
+}
+
+
+function isInt(i){
+    return (Number(i) === i) && (i % 0 === 0);
+}
 
 Engine.GetPlayerCords = function(){
     var x = Math.round(this.player.x);
     var y = Math.round(this.player.y);
     return {x: x, y: y};
 }
+Engine.GetPlayerCordsFloor = function(){
+    var x = Math.floor(this.player.x);
+    var y = Math.floor(this.player.y);
+    return {x: x, y: y};
+}
+Engine.GetPlayerCordsCeil = function(){
+    var x = Math.ceil(this.player.x);
+    var y = Math.ceil(this.player.y);
+    return {x: x, y: y};
+}
 
 // Add item to inventory
 Engine.addToInvetory = function(block_id){
-    if(this.invetory.length > 10) return false;
+    if(this.invetory.length >= 10) return false;
     this.invetory.push(block_id);
     return true;
 }

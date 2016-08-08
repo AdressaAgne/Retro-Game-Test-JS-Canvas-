@@ -136,7 +136,7 @@ addItem('88293b', {
     y           : 10,
     onWalkOver  : function(){
         Engine.money += 25;
-        this.block_id = ItemsList.dirt;
+        changeBlock(this, ItemsList.dirt);
     }
 });
 
@@ -155,7 +155,7 @@ addItem('f9e000', {
     ],
     onWalkOver  : function(){
         Engine.money += 10;
-        this.block_id = ItemsList.dirt;
+        changeBlock(this, ItemsList.dirt);
     }
 });
 
@@ -174,7 +174,7 @@ addItem('e5e5e5', {
     ],
     onWalkOver  : function(){
         Engine.money += 5;
-        this.block_id = ItemsList.dirt;
+        changeBlock(this, ItemsList.dirt);
     }
 });
 
@@ -185,7 +185,7 @@ addItem('cd6e28', {
     type        : 'item',
     onWalkOver  : function(){
         Engine.money++;
-        this.block_id = ItemsList.dirt;
+        changeBlock(this, ItemsList.dirt);
     },
     anim        : [
         {x: 5, y: 10},
@@ -293,7 +293,7 @@ addItem('lava_steam', {
         {x: 11, y: 3},
     ],
     onRender : function(){
-        if(this.animCount == 0) this.block_id = ItemsList.lava;
+        if(this.animCount == 0) changeBlock(this, ItemsList.lava);
     }
 });
 
@@ -308,7 +308,7 @@ addItem('steam', {
         {x: 11, y: 2},
     ],
     onRender : function(){
-        if(this.animCount == 0) this.block_id = ItemsList.dirt;
+        if(this.animCount == 0) changeBlock(this, ItemsList.dirt);
     }
 });
 
@@ -476,14 +476,13 @@ addItem('bb9983', {
     x           : 2,
     y           : 4,
     onAction    : function(){
-        this.block_id = ItemsList.lever_on;
+        changeBlock(this, ItemsList.lever_on);
         if(Engine.doors.hasPower){
             for(var d = 0; d < Engine.doors.doors.length;d++){
                 var door = Engine.doors.doors[d];
                 Engine.fullMap[door.x][door.y].block_id = ItemsList.iron_door_closed;
             }
-        
-            Engine.fullMap[Engine.doors.doors[Engine.doors.selectedDoor].x][Engine.doors.doors[Engine.doors.selectedDoor].y].block_id = ItemsList.iron_door_open;
+            changeBlock(Engine.fullMap[Engine.doors.doors[Engine.doors.selectedDoor].x][Engine.doors.doors[Engine.doors.selectedDoor].y], ItemsList.iron_door_open);
         }
     }
 });
@@ -495,11 +494,11 @@ addItem('lever_on', {
     x           : 3,
     y           : 4,
     onAction    : function(){
-        this.block_id = ItemsList.lever_off;
+        changeBlock(this, ItemsList.lever_off);
         if(Engine.doors.hasPower){
             for(var d = 0; d < Engine.doors.doors.length;d++){
                 var door = Engine.doors.doors[d];
-                Engine.fullMap[door.x][door.y].block_id = ItemsList.iron_door_closed;
+                changeBlock( Engine.fullMap[door.x][door.y], ItemsList.iron_door_closed);
             }
         }
     }
@@ -514,7 +513,7 @@ addItem('panel_off', {
     y           : 0,
     onRender    : function(){
         if(Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
-            this.block_id = ItemsList.panel_1;
+            changeBlock(this, ItemsList.panel_1);
             Engine.doors.hasPower = true;
             Engine.doors.selectedDoor = 0;
         }
@@ -530,13 +529,13 @@ addItem('05eb76', {
     y           : 0,
     onAction    : function(){
         if(Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
-            this.block_id = ItemsList.panel_2;
+            changeBlock(this, ItemsList.panel_2);
             Engine.doors.selectedDoor = 1;
         }
     },
     onRender    : function(){
         if(!Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
-            this.block_id = ItemsList.panel_off;
+            changeBlock(this, ItemsList.panel_off);
             Engine.doors.hasPower = false;
         }
     }
@@ -550,13 +549,13 @@ addItem('panel_2', {
     y           : 0,
     onAction    : function(){
         if(Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
-            this.block_id = ItemsList.panel_3;
+            changeBlock(this, ItemsList.panel_3);
             Engine.doors.selectedDoor = 2;
         }
     },
     onRender    : function(){
         if(!Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
-            this.block_id = ItemsList.panel_off;
+            changeBlock(this, ItemsList.panel_off);
             Engine.doors.hasPower = false;
         }
     }
@@ -570,13 +569,13 @@ addItem('panel_3', {
     y           : 0,
     onAction    : function(){
         if(Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
-            this.block_id = ItemsList.panel_1;
+            changeBlock(this, ItemsList.panel_1);
             Engine.doors.selectedDoor = 0;
         }
     },
     onRender    : function(){
         if(!Engine.fullMap[this.x+1][this.y].block_id.isPowerSource){
-            this.block_id = ItemsList.panel_off;
+            changeBlock(this, ItemsList.panel_off);
             Engine.doors.hasPower = false;
         }
     }
@@ -594,7 +593,7 @@ addItem('f0ca18', {
     onUse    : function(){
         if(this.block_id == ItemsList.dirt){
             Engine.removeSelectedInvetoryitem();
-            this.block_id = ItemsList.battery;
+            changeBlock(this, ItemsList.battery);
         }
     }
 });
@@ -747,7 +746,7 @@ addItem('a048dd', {
 
             if(this.hp <= 0){
                 var drops = this.block_id.drop();
-                this.block_id = drops[rng(0, drops.length-1)];
+                changeBlock(this, drops[rng(0, drops.length-1)]);
                 resetAnimation(this.block_id);
             }
         }
@@ -801,6 +800,286 @@ addItem('swomp', {
     ]
 });
 
+addItem('test', {
+    name        : 'test',
+    solid       : false,
+    moveable    : false,
+    type        : 'block',
+    x           : 11,
+    y           : 15,
+});
+
+// -> cracked dirt ->  quick sand -> teleporter -> collector
+
+addItem('ecc40b', {
+    name        : 'touch',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    canPickUp   : true,
+    anim        : [
+        {x : 7, y: 10},
+        {x : 7, y: 11},
+        {x : 7, y: 12},
+    ],
+    onUse       : function(){
+        changeOnUse(this, ItemsList.tnt, ItemsList.tnt_prime, ItemsList.touch);
+    }
+});
+
+addItem('boom', {
+    name        : 'explotion',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    anim        : [
+        {x : 9, y: 4},
+        {x : 10, y: 4},
+        {x : 11, y: 4},
+    ],
+    onRender : function(){
+        if(this.animCount == 0) this.block_id = ItemsList.dirt;
+    }
+});
+
+
+addItem('3c3e3f', {
+    name        : 'belt_right',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    anim        : [
+        {x : 10, y: 15},
+        {x : 9, y: 15},
+        {x : 8, y: 15},
+    ],
+    onRender : function(){
+        if(this.x == Engine.GetPlayerCords().x && this.y == Engine.GetPlayerCords().y){
+            Engine.walkDir(2, Engine.walkingDist);
+        }
+    }
+});
+addItem('2b3033', {
+    name        : 'belt_left',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    anim        : [
+        {x : 8, y: 15},
+        {x : 9, y: 15},
+        {x : 10, y: 15},
+    ],
+    onRender : function(){
+        if(this.x == Engine.GetPlayerCords().x && this.y == Engine.GetPlayerCords().y){
+            Engine.walkDir(0, Engine.walkingDist);
+        }
+    }
+});
+
+addItem('a3250c', {
+    name        : 'tnt',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    canPickUp   : true,
+    x           : 15,
+    y           : 12,
+    onUse       : function(){
+        removeOnUse(this, ItemsList.dirt, ItemsList.tnt);
+    }
+});
+addItem('tnt_prime', {
+    name        : 'tnt_prime',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    anim        : [
+        {x : 15, y: 11},
+        {x : 14, y: 11},
+        {x : 13, y: 11},
+        {x : 12, y: 11},
+    ],
+    onRender : function(){
+        if(this.animCount == 0) this.block_id = ItemsList.explotion;
+    }
+});
+
+
+
+
+
+///////////////////////////////////
+////     COLLECTOR             ////
+///////////////////////////////////
+
+
+addItem('d0cbbe', {
+    name        : 'collector_stage_1',
+    solid       : true,
+    moveable    : false,
+    type        : 'item',
+    x           : 11,
+    y           : 14
+});
+
+addItem('collector_stage_2', {
+    name        : 'collector_stage_2',
+    solid       : true,
+    moveable    : false,
+    type        : 'item',
+    x           : 12,
+    y           : 14,
+});
+addItem('collector_stage_3', {
+    name        : 'collector_stage_3',
+    solid       : true,
+    moveable    : false,
+    type        : 'item',
+    x           : 13,
+    y           : 14,
+});
+addItem('collector_stage_4', {
+    name        : 'collector_stage_4',
+    solid       : true,
+    moveable    : false,
+    type        : 'item',
+    x           : 14,
+    y           : 14,
+});
+addItem('collector_stage_5', {
+    name        : 'collector_stage_5',
+    solid       : true,
+    moveable    : false,
+    type        : 'item',
+    anim        : [
+        {x : 11, y: 13},
+        {x : 12, y: 13},
+        {x : 13, y: 13},
+        {x : 14, y: 13},
+        {x : 15, y: 13},
+        {x : 14, y: 13},
+        {x : 13, y: 13},
+        {x : 12, y: 13},
+    ]       
+});
+addItem('f5c009', {
+    name        : 'gold_box',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    canPickUp   : true,
+    x           : 0,
+    y           : 12,
+    onUse       : function(){
+        removeOnUse(this, ItemsList.dirt, ItemsList.gold_box);
+        
+        removeOnUse(this, ItemsList.collector_stage_4, ItemsList.collector_stage_5);
+        removeOnUse(this, ItemsList.collector_stage_3, ItemsList.collector_stage_4);
+        removeOnUse(this, ItemsList.collector_stage_2, ItemsList.collector_stage_3);
+        removeOnUse(this, ItemsList.collector_stage_1, ItemsList.collector_stage_2); 
+         
+    }
+});
+
+
+// BOOMERANG
+
+addItem('boomerang_prime', {
+    name        : 'boomerang_prime',
+    solid       : true,
+    moveable    : false,
+    type        : 'item',
+    anim        : [
+        {x : 13, y: 3},
+        {x : 13, y: 4},
+        {x : 12, y: 4},
+        {x : 12, y: 3},
+    ], 
+    onRender    : function(){
+        setTimeout(function(){
+        var x = this.x;
+        var y = this.y;
+
+        if(this.dir == 0) --x;
+        if(this.dir == 1) --y;
+        if(this.dir == 2) ++x;
+        if(this.dir == 3) ++y;
+        
+
+        if(Engine.fullMap[x][y].block_id == ItemsList.dirt){
+            
+            Engine.fullMap[x][y].block_id = ItemsList.boomerang_prime;
+            Engine.fullMap[x][y].animCount = this.animCount;
+            Engine.fullMap[x][y].dir = this.dir;
+            Engine.fullMap[x][y].l = this.l;
+            Engine.fullMap[x][y].l++;
+
+            
+            if(this.l > 2){
+
+                if(Engine.fullMap[x][y].dir == 0){
+                     Engine.fullMap[x][y].dir = 2;
+                } else if(Engine.fullMap[x][y].dir == 1) {
+                    Engine.fullMap[x][y].dir = 3;
+                } else if(Engine.fullMap[x][y].dir == 2) {
+                    Engine.fullMap[x][y].dir = 0;
+                } else if(Engine.fullMap[x][y].dir == 3){
+                    Engine.fullMap[x][y].dir = 1;  
+                }
+                
+                Engine.fullMap[x][y].l = 0;
+            }
+            
+            changeBlock(this, ItemsList.dirt);
+            
+            if(x == Engine.GetPlayerCords().x && y == Engine.GetPlayerCords().y){
+                changeBlock(Engine.fullMap[x][y], ItemsList.dirt);
+                Engine.addToInvetory(ItemsList.boomerang);
+            }
+            
+        } else {
+            
+            if(Engine.fullMap[x][y].block_id.type == 'creature'){
+                Engine.fullMap[x][y].hp--;
+                if(Engine.fullMap[x][y].hp <= 0){
+                    var drops = Engine.fullMap[x][y].block_id.drop();
+                    changeBlock(Engine.fullMap[x][y], drops[rng(0, drops.length-1)]);
+                    resetAnimation(Engine.fullMap[x][y].block_id);
+                }
+            }
+            changeBlock(this, ItemsList.boomerang);
+        }
+        
+        delete this.dir; 
+        delete this.l; 
+        
+        }.bind(this), 0);
+    }
+});
+addItem('825c2c', {
+    name        : 'boomerang',
+    solid       : false,
+    moveable    : false,
+    type        : 'item',
+    canPickUp   : true,
+    x : 13,
+    y: 3,
+    onUse       : function(){
+        if(typeof this.dir == 'undefined') this.dir = Engine.facing;
+        if(typeof this.l == 'undefined') this.l = 1;
+        removeOnUse(this, ItemsList.dirt, ItemsList.boomerang_prime);
+    }
+});
+
+function changeBlock(b_id, b_replacement, callback){
+    b_id.block_id = b_replacement;
+    resetAnimation(b_id); // reset animation
+
+    if(typeof callback == 'function'){
+        callback.bind(b_id)();
+    }
+}
+
 //changeOnUse(this, ItemsList.dirt, ItemsList.water, ItemsList.bucket);
 function changeOnUse(b_id, b_use, b_replacement, i_replcement, callback){
     if(b_id.block_id != b_use) return;
@@ -833,11 +1112,6 @@ function addItem(id, object){
 //  2.
 //  Make a Pokal, Pokal is end of level, Walk on it and level ends
 //  Make End of Level Screen
-//  Make load new map function
 //  3. 
 //  Make Fire hurt
 //  Make Die Screen Function
-//  
-//  Fix up code... make it look good, add comments
-//  Fix walking
-//      Fix Boulder Rolling
