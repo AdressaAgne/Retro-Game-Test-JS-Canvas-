@@ -5,25 +5,82 @@ function animate() {
     // Request new frame if allowed
     if(Engine.allowRender) requestAnimFrame( animate );
     Engine.ImageSmoothing(false);
+    Engine.outputCtx.clearRect(0, 0, Engine.outputCanvas.width, Engine.outputCanvas.height);
     
     if(Engine.renderMenu) {
         
-        if(pressedKeys[keyCodes.w] && Engine.menu.selectedButton > 0){
-            Engine.menu.selectedButton--;
+        if(pressedKeys[keyCodes.w]){
+            if(Engine.menu.selectedButton > 0){
+                Engine.menu.selectedButton--;
+            } else {
+                Engine.menu.selectedButton = Engine.menu.buttons.length-1;
+            }
+            pressedKeys[keyCodes.w] = false;
+            Engine.dialogOpen = false;
+        }
+        
+        if(pressedKeys[keyCodes.s]){
+            if(Engine.menu.selectedButton < Engine.menu.buttons.length-1){
+                Engine.menu.selectedButton++;
+            } else {
+                Engine.menu.selectedButton = 0;
+            }
+            
+            pressedKeys[keyCodes.s] = false;
+            Engine.dialogOpen = false;
+        }
+        
+        if(pressedKeys[keyCodes.enter]){
+            Engine.menu.buttons[Engine.menu.selectedButton].press();
+            pressedKeys[keyCodes.enter] = false;
+        }
+        
+        if(pressedKeys[keyCodes.esc]){
+            Engine.dialogOpen = false;
+        }
+            
+        Engine.RenderMenu();
+        
+        if(Engine.dialogOpen){
+            Engine.drawDialog();
+        }
+        return;
+    }
+    
+    if(Engine.renderMapSelector) {
+        if(pressedKeys[keyCodes.esc]){
+            Engine.renderMenu = true;
+            Engine.renderMapSelector = false;
+        }
+        
+        if(pressedKeys[keyCodes.w]){
+            if(Engine.selectedMap > 0){
+                Engine.selectedMap--;
+            } else {
+                Engine.selectedMap = Engine.selecableMaps-1;
+            }
+            
             pressedKeys[keyCodes.w] = false;
         }
         
-        if(pressedKeys[keyCodes.s] && Engine.menu.selectedButton < Engine.menu.buttons.length-1){
-            Engine.menu.selectedButton++;
+        if(pressedKeys[keyCodes.s]){
+            if(Engine.selectedMap < Engine.selecableMaps-1){
+                Engine.selectedMap++;
+            } else {
+                Engine.selectedMap = 0;
+            }
+            
             pressedKeys[keyCodes.s] = false;
         }
         
         if(pressedKeys[keyCodes.enter]){
-           Engine.menu.buttons[Engine.menu.selectedButton].press();
+            Engine.LoadNewMap(Engine.selectedMap);
+            Engine.renderMenu = false;
+            Engine.renderMapSelector = false;
             pressedKeys[keyCodes.enter] = false;
         }
-            
-        Engine.RenderMenu();
+        
+        Engine.RenderMapSelector();
         return;
     }
     
@@ -103,4 +160,15 @@ function animate() {
     fps = 1/delta;
    
     if(drawFPS) Engine.drawFPS(fps);
+    Engine.DrawToScreen();
+    if(Engine.debug.showPlayerCords){
+        Engine.RenderText("#ffffff", "X: " + cords.x + "("+Engine.player.x.toFixed(1)+"), Y:" +cords.y + "("+Engine.player.y.toFixed(1)+")", 1 ,1);
+    }
+    //GUI Render
+    Engine.RenderGUI();
+    
+    if(pressedKeys[keyCodes.esc]){
+        Engine.renderMenu = true;
+    }
+    
 }

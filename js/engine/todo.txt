@@ -1,0 +1,54 @@
+
+TODO:
+
+1. Screens
+[ ] Function to draw a new menu screen
+[ ] Make End of Level Screen
+[ ] Ingame Dialog with msg
+
+2. Game Mechanics
+[ ] Health..
+[ ] Fare sould hurt
+[ ] walking on lava should hust
+[ ] Die Screen
+[ ] Fix bottom cords box...
+
+3. Items / inventory
+[ ] add boots
+[ ] dedicated boots space in inventory
+[ ] add the Cheese
+[ ] Add a Mouse, can eat the cheese
+
+4. Menu
+[ ] Menu Background
+
+
+5. todo on Maps
+[ ] Add starter item in inventory option
+
+6. Mapmaker?
+[ ] Ingame or additional site?
+
+
+7. Maps
+[ ] Should make a mapmaker before this. so others can conribute easy
+[ ] One for each item. atleast
+[ ] Some advenaced once..
+
+8. Tutorials, should have a popup dialog with text
+[ ] Buckets
+[ ]     Fire
+[ ]     Swomps
+[ ]     Water
+[ ]     Lava
+[ ] 
+[X] Keys and Doors
+[X] Panels
+[X] Teleporter
+[X] Tnt
+[X] Bats And Snakes
+[ ] Boomerang
+[ ] Coind and Chests
+[ ] Boulders
+[ ] Collector!
+

@@ -19,19 +19,22 @@ var Engine = {
 //      VARIABLES
 ///////////////////////////////////    
     
-    canvas                  : document.getElementById('game'),
-    ctx                     : document.getElementById('game').getContext('2d'),
+    canvas                  : null,
+    ctx                     : null,
+    outputCanvas            : document.getElementById('game'),
+    outputCtx               : null,
     allowRender             : true,
     CurrentMap              : null,
     currentMapNr            : 0,
     fullMap                 : {},
-    startMap                : 4,
+    startMap                : 0,
 // n * .5 of a block                
-    fog                     : 4, 
+    fog                     : 10, 
     facing                  : 3,
 
 // basically game tic 3 = 20tics/s,  10 = 6tics/s
     count                   : 0,
+    animCount               : {},
     maxCount                : 10, 
     
     debug                   : {
@@ -56,6 +59,11 @@ var Engine = {
         hasPower      : false,
     },
     
+    teleporters             : {
+        blue          : {x : null, y : null},
+        red           : {c : null, y : null},
+    },
+    
     gui                     : {
         height      : (3 * 64), 
         width       : 0
@@ -63,12 +71,18 @@ var Engine = {
     
     Items           : {},
     
+    dialogOpen      : false,
+    dialogTitle     : '',
+    dialogText      : '',
+    renderMapSelector : false,
+    selectedMap     : 0,
+    selecableMaps   : 0,
     renderMenu      : true,
     menu            : {
         selectedButton  : 0,
         buttons         : [
             { 
-                text : 'Play Game',
+                text : 'Play/Continue Game',
                 press   : function(){
                     Engine.renderMenu = false;
                 }
@@ -76,13 +90,28 @@ var Engine = {
             { 
                 text : 'How To Play',
                 press   : function(){
-                    Engine.renderHowToPlay = true;
+                    Engine.RenderDialog('How to play', 'w : up\na : left\ns : down\nd : right\ne : pick up item / do action on block\nq : use selected inventory item\n0-9 : Inventory Select\nesc : Back To Menu');
+                }
+            },
+            { 
+                text : 'Map Selctor',
+                press   : function(){
+                    Engine.renderMapSelector = true;
+                    Engine.renderMenu = false;
+                }
+            },
+            { 
+                text : 'Tutorial',
+                press   : function(){
+                    
+                    Engine.LoadNewMap(5);
+                    Engine.renderMenu = false;
                 }
             },
             { 
                 text : 'Credits',
                 press   : function(){
-                   Engine.renderCredits = true;
+                   Engine.RenderDialog('Credits', 'Code :\nAgne Ødegaard\nArt :\nAgne Ødegaard\nKjetil Flå Gjersvold');
                 }
             },
         ],
@@ -92,45 +121,33 @@ var Engine = {
 //      BASE FUNCTIONS
 ///////////////////////////////////
 
-    Render : function(file){
-        var data = this.CurrentMap;
-        
+    Render : function(file){        
         // Clear screen for redrawing
         Engine.ctx.clearRect(0, 0, (this.CurrentMap.width * 64), (this.CurrentMap.height * 64));
 
-
-        
+        var renderAbow = [];
         
         for (var x in this.fullMap) {
             if (!this.fullMap.hasOwnProperty(x)) continue;
             
             for (var y in this.fullMap[x]) {
+                if (!this.fullMap[x].hasOwnProperty(y)) continue;
+                
                 var item = this.fullMap[x][y];
 
                 if(typeof item.block_id == 'undefined'){
-                    console.log(item, item.block_id)
+                    console.error("Could not render block :", item);
                     this.allowRender = false;
                 }
                 
-                if(item.block_id.type == 'player' || item.block_id.type == 'item' || item.block_id.type == 'creature') this.drawFromSprite(MapObjects['ffffff'], item.x, item.y);
-                    
-                    
-                if(typeof item.block_id.anim !== 'undefined'){
-
-                    if(typeof item.animCount == 'undefined') item.animCount = rng(0, item.block_id.anim.length-3);
-                    this.drawFromAnimSprite(item.block_id.anim[item.animCount], item.x, item.y);
-
-                    if(this.count == 0){
-                        ++item.animCount;
-                        if(item.animCount >= item.block_id.anim.length){
-                            item.animCount = 0;
-                        }
-                    }
-
-                } else {
-                    this.drawFromSprite(item.block_id, item.x, item.y);
-                    this.drawFromSprite(item.block_id, item.x, item.y);
+                if(item.block_id.type == 'player' || item.block_id.type == 'item' || item.block_id.type == 'creature') this.drawFromSprite(ItemsList.dirt, item.x, item.y);
+                
+                if(item.block_id.renderAbow){
+                    renderAbow.push(item);
+                    continue;
                 }
+                
+                this.renderBlock(item);
 
                 // Triggers every tic
                 if(typeof item.block_id.onRender == 'function'){ 
@@ -148,13 +165,54 @@ var Engine = {
         //Player Render
         this.RenderPlayer(item);
         
+        for(var item in renderAbow){
+            this.renderBlock(renderAbow[item]);
+        }
+        
         // Fog Render
         this.RenderFog();
         
-        //GUI Render
-        this.RenderGUI();
-        
         this.count = this.count >= this.maxCount ? 0 : this.count+1;
+    },
+    
+    renderBlock : function(item){
+        // Animated Block    
+        if(typeof item.block_id.anim !== 'undefined'){ 
+
+            if(typeof item.animCount == 'undefined') item.animCount = rng(0, item.block_id.anim.length-1);
+            this.drawFromAnimSprite(item.block_id.anim[item.animCount], item.x, item.y);
+
+            if(this.count == 0){
+                ++item.animCount;
+                if(item.animCount >= item.block_id.anim.length){
+                    item.animCount = 0;
+                }
+            }
+            
+        // Static Block
+        } else { 
+            this.drawFromSprite(item.block_id, item.x, item.y);
+        }
+    },
+    
+    renderBlockGui : function(block, x, y){
+        // Animated Block    
+        if(typeof block.anim !== 'undefined'){ 
+
+            if(typeof this.animCount[block.name] == 'undefined') this.animCount[block.name] = rng(0, block.anim.length-1);
+            this.drawFromAnimSpriteGui(block.anim[this.animCount[block.name]], x, y);
+
+            if(this.count == 0){
+                ++this.animCount[block.name];
+                if(this.animCount[block.name] >= block.anim.length){
+                    this.animCount[block.name] = 0;
+                }
+            }
+            
+        // Static Block
+        } else { 
+            this.drawFromAnimSpriteGui(block, x, y);
+        }
     },
     
     ImageSmoothing : function(bool){
@@ -162,18 +220,27 @@ var Engine = {
         this.ctx.webkitImageSmoothingEnabled = bool;
         this.ctx.msImageSmoothingEnabled = bool;
         this.ctx.imageSmoothingEnabled = bool;
+        
+        this.outputCtx.mozImageSmoothingEnabled = bool;
+        this.outputCtx.webkitImageSmoothingEnabled = bool;
+        this.outputCtx.msImageSmoothingEnabled = bool;
+        this.outputCtx.imageSmoothingEnabled = bool;
     },
     
     // Open a map, returns array[x][y]
-    Open : function(Map){   
+    Open : function(Map, fog){   
         this.allowRender = false;
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext('2d');
         canvas.width = Map.width;
         canvas.height = Map.height;
-        this.canvas.width = (Map.width * 64) + this.gui.width;
-        this.canvas.height = (Map.height * 64) + this.gui.height;
+        this.canvas.width = (Map.width * 64) ;
+        this.canvas.height = (Map.height * 64);
+        this.outputCanvas.height = this.canvas.height  + this.gui.height;
+        this.outputCanvas.width = this.canvas.width + this.gui.width;
         ctx.drawImage(Map, 0, 0);
+        
+        this.doors.doors = [];
         
         var mapData = {
             width : Map.width,
@@ -185,9 +252,10 @@ var Engine = {
             for(var y = 0; y < Map.height; y++){
                 var rgb = ctx.getImageData(x, y, 1, 1).data;
                 var color = rgbToHex(rgb[0], rgb[1], rgb[2]);
+                var block = (typeof MapObjects[color] !== 'undefined') ? MapObjects[color] : MapObjects['error']
                 var d = {'x' : x,
                          'y' : y,
-                         'block_id' : MapObjects[color],
+                         'block_id' : block,
                          'color' : color
                         };
                 if(color == 'ff0000') {
@@ -234,6 +302,15 @@ var Engine = {
                     this.doors.doors.push(bID);
                 }
                 
+                if(bID.block_id == ItemsList.tp_red){
+                    this.teleporters.red.x = bID.x;
+                    this.teleporters.red.y = bID.y;
+                }
+                if(bID.block_id == ItemsList.tp_blue){
+                    this.teleporters.blue.x = bID.x;
+                    this.teleporters.blue.y = bID.y;
+                }
+                
             }
         }
         
@@ -242,16 +319,42 @@ var Engine = {
         return mapData;
     },
     
+    DrawToScreen : function(){
+        // texture, start x, start y, end x, end y, pos x, pos y, end size x, end size, y,
+        var m = 64;
+        var fog = (this.fog-1) * m;
+        var scale = 2;
+        var start_x = (this.player.x * m) - (fog) + 32;
+        var start_y = (this.player.y * m) - (fog) + 32;
+        var end_x   = (fog*4 + 32);
+        var end_y   = (fog*4 + 32);
+        
+        var pos_x = 0;
+        var pos_y = 0;
+        var width = this.canvas.width;
+        var height = this.canvas.height;
+        
+        
+        this.outputCtx.drawImage(this.canvas, start_x, start_y, end_x, end_y, pos_x, pos_y, width * scale, height * scale);
+        // this.outputCtx.clearRect(0, height-192, width, height+192);
+        
+        
+    },
     // texture loading
     init : function(){
         // setting base settings before map
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.outputCtx = this.outputCanvas.getContext('2d');
+        
         this.canvas.width = (16 * 64);
         this.canvas.height = (16 * 64);
+        this.outputCanvas.width = this.canvas.width;
+        this.outputCanvas.height = this.canvas.height;
         this.drawLoading('Loading... 0%');
         
         var t = Object.keys(texture).length;
         var i = 0;
-        
         
         // Loading Textures
         for (var key in texture) {
@@ -268,8 +371,13 @@ var Engine = {
                 this.drawLoading('Loading... ' + parseInt(i / t * 100) + '% ('+key+')');
                 if(i === t) {
                     this.fog = Maps[this.startMap].fog;
-                    this.CurrentMap = this.Open(Maps[this.startMap].file);
+                    this.CurrentMap = this.Open(Maps[this.startMap].file, Maps[this.startMap].fog);
                     // Calling Game Loop
+                    
+                    for (var maps in Maps) {
+                        if(Maps[maps].showOnSelector) this.selecableMaps++;
+                    }
+                    
                     this.startGame();
                 } 
             }.bind(this);
@@ -284,36 +392,34 @@ var Engine = {
 ///////////////////////////////////
 
 Engine.RenderFog = function(){
-    var w = this.CurrentMap.width;
-    var h = this.CurrentMap.height;
-    var x = this.player.x;
-    var y = this.player.y;
-    var fog = this.fog / 2;
-
-    this.ctx.clearRect(0, 0, (w - (w - x) - fog) * 64, (h * 64));
-    this.ctx.clearRect(0, 0, w * 64, (h - (h - y) - fog) * 64);
-    this.ctx.clearRect(0, (h - (h - y - fog - 1)) * 64, w * 64, h * 64);
-    this.ctx.clearRect((w - (w - x - fog - 1)) * 64, 0, w * 64, h * 64);
+//    var w = this.CurrentMap.width;
+//    var h = this.CurrentMap.height;
+//    var x = this.player.x;
+//    var y = this.player.y;
+//    var fog = this.fog / 2;
+//
+//    this.ctx.clearRect(0, 0, (w - (w - x) - fog) * 64, (h * 64));
+//    this.ctx.clearRect(0, 0, w * 64, (h - (h - y) - fog) * 64);
+//    this.ctx.clearRect(0, (h - (h - y - fog - 1)) * 64, w * 64, h * 64);
+//    this.ctx.clearRect((w - (w - x - fog - 1)) * 64, 0, w * 64, h * 64);
 }
 
 // Render Graphical User Interface / Full Inventory Screen
 Engine.RenderGUI = function(){
     // Bronze: 1, Silver: 5, Gold: 10, Ruby: 25
-    this.ctx.drawImage(texture.gui, 0, 0, 16*16, 3*16, 0 * 64, 16 * 64, 16*64, 3*64);
-
-    this.drawFromSprite(this.RenderStill('cd6e28'), .5, 16.5);
-    this.drawFromSprite(MapObjects['d13131'], (this.CurrentMap.width - 1.5), 16.5);
-    this.drawFromSprite(MapObjects['d13131'], (this.CurrentMap.width - 2.5), 16.5);
-    this.drawFromSprite(MapObjects['d13131'], (this.CurrentMap.width - 3.5), 16.5);
-    
+    this.outputCtx.drawImage(texture.gui, 0, 0, 16*16, 3*16, 0 * 64, 16 * 64, 16*64, 3*64);
+    var coin = ItemsList.bronze_coin;
+    if(this.money >= 25) coin = ItemsList.silver_coin;
+    if(this.money >= 100) coin = ItemsList.gold_coin;
+    this.renderBlockGui(coin, .5, 16.4);
     this.RenderText('#f8f8f8', this.money, 1.5, 17.15);
     
     var slots = 10;
     for(var i = 0; i < slots; i++){ // texture, start x, start y, end x, end y, pos x, pos y, end size x, end size, y, 
-        this.ctx.drawImage(texture.gui, 0, 3*16, 21, 21, 24 + i * 21*4 + (i * -4), 17.5*64 + 4, 94, 84);
+        this.outputCtx.drawImage(texture.gui, 0, 3*16, 21, 21, 24 + i * 21*4 + (i * -4), 17.5*64 + 4, 94, 84);
     }
 
-     this.ctx.drawImage(texture.gui, 21, 3*16, 23, 23, 19 + (this.selectedInvetorySlot * 92) + (this.selectedInvetorySlot * -11), 17.5*64, 92, 92);
+     this.outputCtx.drawImage(texture.gui, 21, 3*16, 23, 23, 19 + (this.selectedInvetorySlot * 92) + (this.selectedInvetorySlot * -11), 17.5*64, 92, 92);
 
     for(var i = 0; i < this.invetory.length; i++){ 
         this.drawToInventory(this.invetory[i], i);
@@ -325,9 +431,6 @@ Engine.RenderPlayer = function(){
      var cords = this.GetPlayerCords();
     if(this.debug.showPlayerBox){
         this.drawFromSprite(ItemsList.test, cords.x, cords.y);
-    }
-    if(this.debug.showPlayerCords){
-        this.RenderText("#ffffff", "X: " + cords.x + "("+this.player.x.toFixed(1)+"), Y:" +cords.y + "("+this.player.y.toFixed(1)+")", 1 ,1);
     }
     
     this.drawPlayer(this.player.x, this.player.y);
@@ -341,38 +444,111 @@ Engine.RenderStill = function(colorCode){
 
 }
 Engine.RenderText = function(color, text, x, y){
-    this.ctx.fillStyle = color;
-    this.ctx.font = "34px Verdana";
-    this.ctx.fillText(text, x * 64, y * 64);
+    this.outputCtx.fillStyle = color;
+    this.outputCtx.font = "34px Verdana";
+    this.outputCtx.fillText(text, x * 64, y * 64);
 }
 Engine.RenderTextPixels = function(color, text, x, y){
-    this.ctx.fillStyle = color;
-    this.ctx.font = "34px Verdana";
-    this.ctx.fillText(text, x, y);
+    this.outputCtx.fillStyle = color;
+    this.outputCtx.font = "34px Verdana";
+    this.outputCtx.fillText(text, x, y);
 }
 Engine.RenderRect = function(color, x, y, w, h){
-    this.ctx.fillStyle = color;
-    this.ctx.fillRect(x, y, w, h);
+    this.outputCtx.fillStyle = color;
+    this.outputCtx.fillRect(x, y, w, h);
 }
 
 Engine.RenderMenu = function(){
-    this.RenderRect("#ff8800", 0, 0, this.canvas.width, this.canvas.height);
-    this.drawFromTexture(texture.menu, 0, 0, 16, 19, 0, 0, 64);
-    
-    
-    this.drawFromTexture(texture.gui, 0, 8, 16, 16, 4.4, 1, 29);
-    
-    
+   
+    this.RenderMenuBackgroud();
     for(var i = 0; i < this.menu.buttons.length; i++){
-        this.drawMenuButton(350 + (i*24*4), (i == this.menu.selectedButton), this.menu.buttons[i].text);
+        this.drawMenuButton(530 + (i*24*4), (i == this.menu.selectedButton), this.menu.buttons[i].text);
     }
-    
 }
 
+Engine.RenderMenuBackgroud = function(){
+    this.drawFromTexture(texture.menu, 0, 0, 16, 19, 0, 0, 64);
+    this.drawFromTexture(texture.gui, 0, 8, 16, 16, 0, 0, 64);
+}
+
+Engine.RenderMapSelector = function(){
+    this.RenderMenuBackgroud();
+    this.dialogText = '';
+    this.dialogTitle = 'Map Selector';
+    this.drawDialog(8, Maps.length+.5);
+    
+    var x = 190;
+    var y = 600;
+
+    var pos_x = 0;
+    var pos_y = 0;
+    var offset_x = 270;
+    for(var i = 0; i < Maps.length; i++){ // texture, start x, start y, end x, end y, pos x, pos y, end size x, end size, y, 
+        if(!Maps[i].showOnSelector) continue;
+        if(pos_y == 8) {
+            pos_x++;
+            pos_y = 0;
+        }
+        this.outputCtx.drawImage(Maps[i].file, 0, 0, 16, 16,x + pos_x * offset_x, y + pos_y * 68, 64, 64);
+        
+        if(this.selectedMap == i){
+            this.RenderTextPixels("#fbdb00", Maps[i].name, x + pos_x * offset_x + 80 , y + pos_y * 68 + 48);
+        } else {
+            this.RenderTextPixels("#f8f8f8", Maps[i].name, x + pos_x * offset_x + 80 , y + pos_y * 68 + 48);    
+        }
+        pos_y++;
+    }
+}
+
+Engine.RenderDialog = function(title, text){
+    this.dialogText = text;
+    this.dialogTitle = title;
+    this.dialogOpen = !this.dialogOpen;
+}
 
 ///////////////////////////////////
 //      DRAW FUNCTIONS
 ///////////////////////////////////
+
+Engine.drawDialog = function(y, h){
+    var text = Engine.dialogText.split('\n');
+    if(typeof y == 'undefined') var y = 4;
+    if(typeof h == 'undefined') var h = 1+text.length;
+    var x = 2.5
+    var w = 10;
+    this.drawFromTexture(texture.gui, 0, 5, 1, 1, x, y, 64); // top left
+    
+    this.drawFromTexture(texture.gui, 0, 7, 1, 1, x, y+h, 64); // bottom left
+    
+    this.drawFromTexture(texture.gui, 2, 5, 1, 1, x+w, y, 64); // top right
+    
+    this.drawFromTexture(texture.gui, 2, 7, 1, 1, x+w, y+h, 64); // bottom right
+    
+    for(var i = 1; i < w; i++){
+        for(var j = 1; j < h; j++){
+            this.drawFromTexture(texture.gui, 1, 6, 1, 1, x + i, y + j, 64); // bottom right
+        }
+    }
+    
+    for(var i = 1; i < h; i++){
+        this.drawFromTexture(texture.gui, 0, 6, 1, 1, x    , y + i, 64); // bottom right
+        this.drawFromTexture(texture.gui, 2, 6, 1, 1, x + w, y + i, 64); // bottom right
+    }
+    for(var i = 1; i < w; i++){
+        this.drawFromTexture(texture.gui, 1, 5, 1, 1, x + i, y, 64); // bottom right
+        this.drawFromTexture(texture.gui, 1, 7, 1, 1, x + i, y + h, 64); // bottom right
+    }
+    this.RenderText("#f8f8f8", Engine.dialogTitle, x+.5, y+1);
+
+    for(var i = 0; i < text.length; i++){
+        this.RenderText("#f8f8f8", text[i], x+.5, y+2+i);    
+    }
+    
+}
+
+Engine.RenderDialogText = function(){
+    
+}
 
 // Draw the FPS counter
 Engine.drawFPS = function(){  
@@ -381,19 +557,19 @@ Engine.drawFPS = function(){
 
 // Draw Loading Screen
 Engine.drawLoading = function(text){
-    this.ctx.clearRect(0, 0, 16 * 64, 16 * 64);
+    this.outputCtx.clearRect(0, 0, 16 * 64, 16 * 64);
     this.RenderText("#f8f8f8", text, 25, 50)
     console.info(text);
 }
 
 // Draw Menu Screen
 Engine.drawMenuButton = function(y, selected, text){
-    var button_size_x = 193;
+    var button_size_x = 194;
     var button_size_y = 23;
     var StartPosY = selected == true ? 3 * 16 + 23 : 3 * 16;
     var StartPosX = 256 - button_size_x;
     var x = (256 - button_size_x) / 2 * 4;
-    this.ctx.drawImage(texture.gui, StartPosX, StartPosY, button_size_x, button_size_y, x, y, button_size_x*4, button_size_y*4);
+    this.outputCtx.drawImage(texture.gui, StartPosX, StartPosY, button_size_x, button_size_y, x, y, button_size_x*4, button_size_y*4);
     
     this.RenderTextPixels('#f8f8f8', text, x + (button_size_x/2), y+(button_size_y*2.5));
 }
@@ -406,9 +582,9 @@ Engine.drawDeathScrenn = function(){
 Engine.drawToInventory = function(id, slot){
         
     if(typeof id.anim !== 'undefined'){
-        this.ctx.drawImage(texture.sprite, id.anim[0].x * 16, id.anim[0].y * 16, 16, 16, 34 + slot * 84 - (slot*4), 18 * 64 - 20, 64, 64);
+        this.outputCtx.drawImage(texture.sprite, id.anim[0].x * 16, id.anim[0].y * 16, 16, 16, 34 + slot * 84 - (slot*4), 18 * 64 - 20, 64, 64);
     }
-    this.ctx.drawImage(texture.sprite, id.x * 16, id.y * 16, 16, 16, 34 + slot * 84 - (slot*4), 18 * 64 - 20, 64, 64);    
+    this.outputCtx.drawImage(texture.sprite, id.x * 16, id.y * 16, 16, 16, 34 + slot * 84 - (slot*4), 18 * 64 - 20, 64, 64);    
     
 }
 
@@ -431,12 +607,17 @@ Engine.drawFromSprite = function(id, x, y){
 }
 
 Engine.drawFromTexture = function(t, sx, sy, w, h, x, y, scale){        
-    this.ctx.drawImage(t, sx * 16, sy * 16, w * 16, h * 16, x * 64, y * 64, w * scale, h * scale);
+    this.outputCtx.drawImage(t, sx * 16, sy * 16, w * 16, h * 16, x * 64, y * 64, w * scale, h * scale);
 }
 
 Engine.drawFromAnimSprite = function(cords, x, y){
     if(typeof cords == 'undefined') return;
     this.ctx.drawImage(texture.sprite, cords.x * 16, cords.y * 16, 16, 16, x * 64, y * 64, 64, 64);
+}
+
+Engine.drawFromAnimSpriteGui = function(cords, x, y){
+    if(typeof cords == 'undefined') return;
+    this.outputCtx.drawImage(texture.sprite, cords.x * 16, cords.y * 16, 16, 16, x * 64, y * 64, 64, 64);
 }
 
 ///////////////////////////////////
@@ -476,16 +657,21 @@ Engine.switchBlock = function(block, newBlock){
 //Go one level up on map
 
 Engine.loadNextMap = function(){
+    if(this.currentMapNr == 'menu'){
+        this.renderMenu = true;
+        return;
+    }
+    
     this.currentMapNr = Maps[this.currentMapNr].next;
     this.fog = Maps[this.currentMapNr].fog; // Set map Fog
     this.invetory = []; // Empty Inventory for new map
-    this.LoadNewMap(Maps[this.currentMapNr].file);
+    this.LoadNewMap(this.currentMapNr);
 }
 
 Engine.MapGoLevelDown = function(){
     if(Maps[this.currentMapNr].levels.length >= 0) return false;
     this.currentMapNr = Maps[this.currentMapNr].levels[Maps[this.currentMapNr].currentLevel-1];
-    this.LoadNewMap(Maps[this.currentMapNr]);
+    this.LoadNewMap(this.currentMapNr);
 }
 
 //Go one level down on map
@@ -494,12 +680,13 @@ Engine.MapGoLevelUp = function(){
     
     this.currentMapNr = Maps[this.currentMapNr].levels[Maps[this.currentMapNr].currentLevel+1];
     
-    this.LoadNewMap(Maps[this.currentMapNr]);
+    this.LoadNewMap(this.currentMapNr);
 }
 
 // Load a new map
 Engine.LoadNewMap = function(map){
-    this.CurrentMap = this.Open(map);
+    this.currentMapNr = map;
+    this.CurrentMap = this.Open(Maps[map].file);
 }
 
 
@@ -551,18 +738,18 @@ Engine.walkDir = function(dir, dist){
     if(this.fullMap[cords.x][cords.y].block_id.solid) canWalk = false;
     
     var mWalk = dist * 2;
-    if(!canWalk && (cords.y-1 > y) && dir == 3){
+    if(!canWalk && (cords.y - 1 > y) && dir == 3){
         canWalk = true;
     }
-    if(!canWalk && (cords.y+.7 < y + mWalk) && dir == 1){
+    if(!canWalk && (cords.y + .7 < y + mWalk) && dir == 1){
 
         canWalk = true;
     }
-    if(!canWalk && (cords.x-.5 > x + mWalk) && dir == 2){
+    if(!canWalk && (cords.x - .5 > x + mWalk) && dir == 2){
 
         canWalk = true;
     }
-    if(!canWalk && (cords.x+.5 < x - mWalk) && dir == 0){
+    if(!canWalk && (cords.x + .5 < x - mWalk) && dir == 0){
 
         canWalk = true;
     }
@@ -583,12 +770,12 @@ Engine.walkDir = function(dir, dist){
 
 
 function isInt(i){
-    return (Number(i) === i) && (i % 0 === 0);
+    return (Number(i) === i) && (i % 1 === 0);
 }
 
 Engine.GetPlayerCords = function(){
     var x = Math.round(this.player.x);
-    var y = Math.round(this.player.y);
+    var y = Math.ceil(this.player.y);
     return {x: x, y: y};
 }
 Engine.GetPlayerCordsFloor = function(){
