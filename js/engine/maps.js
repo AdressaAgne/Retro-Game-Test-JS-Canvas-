@@ -37,19 +37,24 @@ var Maps = [
         fog: 5,
         showOnSelector : true,
     },{
+        name: 't_boomerang',
+        file: texture.tutorial_boomerang,
+        next: 6,
+        fog: 5,
+    },{
         name: 't_snake',
         file: texture.tutorial_bat,
-        next: 6,
+        next: 7,
         fog: 5,
     },{
         name: 't_Panels',
         file: texture.tutorial_panel,
-        next: 7,
+        next: 8,
         fog: 5,
     },{
         name: 't_TNT',
         file: texture.tutorial_tnt,
-        next: 8,
+        next: 9,
         fog: 5,
     },{
         name: 't_tp',

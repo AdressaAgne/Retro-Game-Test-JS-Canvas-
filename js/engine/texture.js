@@ -18,5 +18,6 @@ var texture = {
         tutorial_bat        : 'img/maps/tutorial/bat.gif',
         tutorial_panel      : 'img/maps/tutorial/panel.gif',
         tutorial_tnt        : 'img/maps/tutorial/tnt.gif',
+        tutorial_boomerang  : 'img/maps/tutorial/boomerang.gif',
         
     };

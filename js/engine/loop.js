@@ -74,6 +74,7 @@ function animate() {
         }
         
         if(pressedKeys[keyCodes.enter]){
+            Engine.wipeInvetory();
             Engine.LoadNewMap(Engine.selectedMap);
             Engine.renderMenu = false;
             Engine.renderMapSelector = false;
@@ -96,14 +97,6 @@ function animate() {
     Engine.walk(keyCodes.a, 0, Engine.walkingDist);
     Engine.walk(keyCodes.d, 2, Engine.walkingDist);
     
-    if(!pressedKeys[keyCodes.w] && !pressedKeys[keyCodes.s] &&  !pressedKeys[keyCodes.a] &&  !pressedKeys[keyCodes.d]){
-        //Engine.player.isWalking = false;
-    }
-//    
-//    if(!Engine.player.isWalking){
-//        Engine.player.x = Math.round(Engine.player.x);
-//        Engine.player.y = Math.round(Engine.player.y);
-//    }
     
     // E = search wall, pick up item
     if(pressedKeys[keyCodes.e]){
@@ -170,5 +163,11 @@ function animate() {
     if(pressedKeys[keyCodes.esc]){
         Engine.renderMenu = true;
     }
+    
+    if(pressedKeys[keyCodes.r]){
+        Engine.LoadNewMap(Engine.currentMapNr);
+        Engine.wipeInvetory();
+    }
+    
     
 }

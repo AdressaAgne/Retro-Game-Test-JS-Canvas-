@@ -35,7 +35,7 @@ var Engine = {
 // basically game tic 3 = 20tics/s,  10 = 6tics/s
     count                   : 0,
     animCount               : {},
-    maxCount                : 10, 
+    maxCount                : 8, 
     
     debug                   : {
         showPlayerBox     : false,  
@@ -90,7 +90,7 @@ var Engine = {
             { 
                 text : 'How To Play',
                 press   : function(){
-                    Engine.RenderDialog('How to play', 'w : up\na : left\ns : down\nd : right\ne : pick up item / do action on block\nq : use selected inventory item\n0-9 : Inventory Select\nesc : Back To Menu');
+                    Engine.RenderDialog('How to play', 'w : Up\na : Left\ns : Down\nd : Right\ne : Pick up item / Do action on block\nr : Restart Map\nq : Use selected inventory item\n0-9 : Inventory Select\nesc : Back To Menu');
                 }
             },
             { 
@@ -236,8 +236,9 @@ var Engine = {
         canvas.height = Map.height;
         this.canvas.width = (Map.width * 64) ;
         this.canvas.height = (Map.height * 64);
-        this.outputCanvas.height = this.canvas.height  + this.gui.height;
+        this.outputCanvas.height = this.canvas.height + this.gui.height;
         this.outputCanvas.width = this.canvas.width + this.gui.width;
+        
         ctx.drawImage(Map, 0, 0);
         
         this.doors.doors = [];
@@ -320,25 +321,35 @@ var Engine = {
     },
     
     DrawToScreen : function(){
-        // texture, start x, start y, end x, end y, pos x, pos y, end size x, end size, y,
-        var m = 64;
-        var fog = (this.fog-1) * m;
-        var scale = 2;
-        var start_x = (this.player.x * m) - (fog) + 32;
-        var start_y = (this.player.y * m) - (fog) + 32;
-        var end_x   = (fog*4 + 32);
-        var end_y   = (fog*4 + 32);
+        this.ImageSmoothing(false);
         
-        var pos_x = 0;
-        var pos_y = 0;
+        this.outputCtx.fillStyle = 'black';
+        this.outputCtx.fillRect(0, 0, this.outputCanvas.width, this.outputCanvas.height);
+        
         var width = this.canvas.width;
         var height = this.canvas.height;
         
+        var m = 64;
+        var fov = (this.fog-1) * m;
+        var scale = 2;
+        var start_x = (this.player.x * m) - (fov) + 32;
+        var start_y = (this.player.y * m) - (fov) + 32;
+        var end_x   = (fov*4 + 32);
+        var end_y   = (fov*4 + 32);
+        
+        if(start_x <= 0) start_x = 0;
+        if(start_y <= 0) start_y = 0;
+        
+//        if(start_x >= width/4 + 112) start_x = width/4 + 112;
+//        if(start_y >= height/4 + 112) start_y = height/4 + 112;
+        
+        if(start_x >= width - (fov * 2) - 16) start_x = width - (fov * 2) - 16;
+        if(start_y >= height - (fov * 2) - 16) start_y = height - (fov * 2) - 16;
+
+        var pos_x = 0;
+        var pos_y = 0;
         
         this.outputCtx.drawImage(this.canvas, start_x, start_y, end_x, end_y, pos_x, pos_y, width * scale, height * scale);
-        // this.outputCtx.clearRect(0, height-192, width, height+192);
-        
-        
     },
     // texture loading
     init : function(){
@@ -349,8 +360,8 @@ var Engine = {
         
         this.canvas.width = (16 * 64);
         this.canvas.height = (16 * 64);
-        this.outputCanvas.width = this.canvas.width;
-        this.outputCanvas.height = this.canvas.height;
+        this.outputCanvas.width = this.canvas.width + 256;
+        this.outputCanvas.height = this.canvas.height + 256;
         this.drawLoading('Loading... 0%');
         
         var t = Object.keys(texture).length;
@@ -407,24 +418,32 @@ Engine.RenderFog = function(){
 // Render Graphical User Interface / Full Inventory Screen
 Engine.RenderGUI = function(){
     // Bronze: 1, Silver: 5, Gold: 10, Ruby: 25
-    this.outputCtx.drawImage(texture.gui, 0, 0, 16*16, 3*16, 0 * 64, 16 * 64, 16*64, 3*64);
+    var x = 1.5* 64;
+    var y = 16.25*64;
+    var s = this.selectedInvetorySlot;
+    this.drawDialogFrame(1, 15, 13, 2);
     var coin = ItemsList.bronze_coin;
     if(this.money >= 25) coin = ItemsList.silver_coin;
     if(this.money >= 100) coin = ItemsList.gold_coin;
-    this.renderBlockGui(coin, .5, 16.4);
-    this.RenderText('#f8f8f8', this.money, 1.5, 17.15);
+    
+    this.renderBlockGui(coin, 1.5, 15.2);
+    this.RenderText('#f8f8f8', this.money, 2.5, 15.85);
+    
+    
     
     var slots = 10;
     for(var i = 0; i < slots; i++){ // texture, start x, start y, end x, end y, pos x, pos y, end size x, end size, y, 
-        this.outputCtx.drawImage(texture.gui, 0, 3*16, 21, 21, 24 + i * 21*4 + (i * -4), 17.5*64 + 4, 94, 84);
+        this.outputCtx.drawImage(texture.gui, 0, 3*16, 21, 21, x + i * 21*4 + (i * -2), y + 4, 94, 84);
     }
 
-     this.outputCtx.drawImage(texture.gui, 21, 3*16, 23, 23, 19 + (this.selectedInvetorySlot * 92) + (this.selectedInvetorySlot * -11), 17.5*64, 92, 92);
-
-    for(var i = 0; i < this.invetory.length; i++){ 
-        this.drawToInventory(this.invetory[i], i);
+    this.outputCtx.drawImage(texture.gui, 21, 3*16, 23, 23, x + (s * 92) + (s * -9.5), y, 92, 92);
+    
+    for(var i = 0; i < this.invetory.length; i++){
+        this.renderBlockGui(this.invetory[i], 1.7 + (i*1.285), 16.45);
     }
+    
 }
+
 
 // Render player
 Engine.RenderPlayer = function(){
@@ -510,12 +529,8 @@ Engine.RenderDialog = function(title, text){
 //      DRAW FUNCTIONS
 ///////////////////////////////////
 
-Engine.drawDialog = function(y, h){
-    var text = Engine.dialogText.split('\n');
-    if(typeof y == 'undefined') var y = 4;
-    if(typeof h == 'undefined') var h = 1+text.length;
-    var x = 2.5
-    var w = 10;
+
+Engine.drawDialogFrame = function(x, y, w, h){
     this.drawFromTexture(texture.gui, 0, 5, 1, 1, x, y, 64); // top left
     
     this.drawFromTexture(texture.gui, 0, 7, 1, 1, x, y+h, 64); // bottom left
@@ -538,15 +553,19 @@ Engine.drawDialog = function(y, h){
         this.drawFromTexture(texture.gui, 1, 5, 1, 1, x + i, y, 64); // bottom right
         this.drawFromTexture(texture.gui, 1, 7, 1, 1, x + i, y + h, 64); // bottom right
     }
+}
+Engine.drawDialog = function(y, h){
+    var text = Engine.dialogText.split('\n');
+    if(typeof y == 'undefined') var y = 4;
+    if(typeof h == 'undefined') var h = 1+text.length;
+    var x = 2.5
+    var w = 10;
+    this.drawDialogFrame(x, y, w, h);
     this.RenderText("#f8f8f8", Engine.dialogTitle, x+.5, y+1);
 
     for(var i = 0; i < text.length; i++){
         this.RenderText("#f8f8f8", text[i], x+.5, y+2+i);    
     }
-    
-}
-
-Engine.RenderDialogText = function(){
     
 }
 
@@ -579,14 +598,7 @@ Engine.drawDeathScrenn = function(){
     //todo
 }
 
-Engine.drawToInventory = function(id, slot){
-        
-    if(typeof id.anim !== 'undefined'){
-        this.outputCtx.drawImage(texture.sprite, id.anim[0].x * 16, id.anim[0].y * 16, 16, 16, 34 + slot * 84 - (slot*4), 18 * 64 - 20, 64, 64);
-    }
-    this.outputCtx.drawImage(texture.sprite, id.x * 16, id.y * 16, 16, 16, 34 + slot * 84 - (slot*4), 18 * 64 - 20, 64, 64);    
-    
-}
+
 
 Engine.drawPlayer = function(x, y){
     var id = MapObjects['ff0000'];
@@ -657,30 +669,28 @@ Engine.switchBlock = function(block, newBlock){
 //Go one level up on map
 
 Engine.loadNextMap = function(){
+    this.wipeInvetory();
     if(this.currentMapNr == 'menu'){
         this.renderMenu = true;
-        return;
+        return null;
     }
-    
-    this.currentMapNr = Maps[this.currentMapNr].next;
     this.fog = Maps[this.currentMapNr].fog; // Set map Fog
+    this.LoadNewMap(Maps[this.currentMapNr].next);
+}
+
+Engine.wipeInvetory = function(){
     this.invetory = []; // Empty Inventory for new map
-    this.LoadNewMap(this.currentMapNr);
 }
 
 Engine.MapGoLevelDown = function(){
     if(Maps[this.currentMapNr].levels.length >= 0) return false;
-    this.currentMapNr = Maps[this.currentMapNr].levels[Maps[this.currentMapNr].currentLevel-1];
-    this.LoadNewMap(this.currentMapNr);
+    this.LoadNewMap(Maps[this.currentMapNr].levels[Maps[this.currentMapNr].currentLevel-1]);
 }
 
 //Go one level down on map
 Engine.MapGoLevelUp = function(){
-    if(Maps[this.currentMapNr].levels.length <= Maps[this.currentMapNr].levels.length) return false;
-    
-    this.currentMapNr = Maps[this.currentMapNr].levels[Maps[this.currentMapNr].currentLevel+1];
-    
-    this.LoadNewMap(this.currentMapNr);
+    if(Maps[this.currentMapNr].levels.length <= 0) return false;
+    this.LoadNewMap(Maps[this.currentMapNr].levels[Maps[this.currentMapNr].currentLevel+1]);
 }
 
 // Load a new map
