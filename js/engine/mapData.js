@@ -222,9 +222,6 @@ addItem('cd3f28', {
         {x: 1, y: 15},
         {x: 2, y: 15},
     ],
-    onWalkOver  : function(){
-        console.log('au')
-    }
 });
 
 addItem('d13131', {
@@ -234,9 +231,6 @@ addItem('d13131', {
     type        : 'item',
     x           : 0,
     y           : 11,
-    onWalkOver  : function(){
-        console.log('au')
-    }
 });
 
 addItem('bada55', {
@@ -264,7 +258,7 @@ addItem('98b244', {
     ],
     onRender : function(){
         if(Engine.fullMap[this.x][this.y+1].block_id == ItemsList.dirt){
-            Engine.fullMap[this.x][this.y+1].block_id = MapObjects['667731'];
+            Engine.fullMap[this.x][this.y+1].block_id = ItemsList.water;
         }
     }
 });
@@ -654,9 +648,7 @@ addItem('232e1d', {
     ],
     onRenderFull : function(){
         if(typeof this.hp === 'undefined') this.hp = 5;
-
-        //console.log(i)
-        Engine.drawFromSprite(MapObjects['healthBar'].anim[5-this.hp], this.x, this.y);
+        Engine.drawFromSprite(ItemsList.health_bar.anim[5-this.hp], this.x, this.y);
     }
 });
 addItem('808080', {
@@ -667,29 +659,15 @@ addItem('808080', {
     x           : 1,
     y           : 10,
     onAction  : function(){
-        // 2 = x+1 d
-        // 0 = x-1 a
-        // 1 = y+1 s
-        // 3 = y-1 w
-        var x = this.x;
-        var y = this.y;
         
-        var dir = Engine.facing;
-        
-        if(dir == 0) --x;
-        if(dir == 1) --y;
-        if(dir == 2) ++x;
-        if(dir == 3) ++y;
-        console.log('hit');
-        // Make function for this shit
+        var cords = Engine.getNewCords(this.x, this.y, Engine.facing);
 
-        if(Engine.fullMap[x][y].block_id == ItemsList.dirt){
-            Engine.fullMap[x][y].block_id = this.block_id;
-            this.block_id = ItemsList.dirt;
+        if(Engine.fullMap[cords.x][cords.y].block_id == ItemsList.dirt){
+            swapBlocks(this, Engine.fullMap[cords.x][cords.y]);
         }
-        if(Engine.fullMap[x][y].block_id == ItemsList.water){
-            Engine.fullMap[x][y].block_id = ItemsList.dirt;
-            this.block_id = ItemsList.dirt;
+        if(Engine.fullMap[cords.x][cords.y].block_id == ItemsList.water){
+            changeBlock(Engine.fullMap[cords.x][cords.y], ItemsList.dirt);
+            changeBlock(this, ItemsList.dirt);
         }
 
 
@@ -747,7 +725,7 @@ addItem('464268', {
         if(typeof this.hp === 'undefined') this.hp = 5;
 
         //console.log(i)
-        Engine.drawFromSprite(MapObjects['healthBar'].anim[5-this.hp], this.x, this.y);
+        Engine.drawFromSprite(ItemsList.health_bar.anim[5-this.hp], this.x, this.y);
     }
 });
 
@@ -874,26 +852,17 @@ addItem('tnt_boom', {
     onRender : function(){
         if(this.animCount == 0) this.block_id = ItemsList.dirt;
         
-        var canDestroy = [ItemsList.hedge,ItemsList.hedge_edge,ItemsList.rose_hedge_edge];
+        var canDestroy = [ItemsList.hedge, ItemsList.hedge_edge, ItemsList.rose_hedge_edge];
         for(var i = 0; i < canDestroy.length; i++){
-            item = canDestroy[i];
-            if(Engine.fullMap[this.x+1][this.y].block_id == item){
-                changeBlock(Engine.fullMap[this.x+1][this.y], ItemsList.dirt);
-            }
-            if(Engine.fullMap[this.x-1][this.y].block_id == item){
-                changeBlock(Engine.fullMap[this.x-1][this.y], ItemsList.dirt);
-            }
-            if(Engine.fullMap[this.x][this.y+1].block_id == item){
-                changeBlock(Engine.fullMap[this.x][this.y+1], ItemsList.dirt);
-            }
-            if(Engine.fullMap[this.x][this.y-1].block_id == item){
-                changeBlock(Engine.fullMap[this.x][this.y-1], ItemsList.dirt);
-            }
+            
+            blockDirectionLoop(this, function(){
+                var item = canDestroy[i];
+                if(this.block_id == item) changeBlock(this, ItemsList.dirt); 
+            });
         }
         
     }
 });
-
 
 addItem('3c3e3f', {
     name        : 'belt_right',
@@ -1062,54 +1031,42 @@ addItem('boomerang_prime', {
     ], 
     onRender    : function(){
         setTimeout(function(){
-        var x = this.x;
-        var y = this.y;
-
-        if(this.dir == 0) --x;
-        if(this.dir == 1) --y;
-        if(this.dir == 2) ++x;
-        if(this.dir == 3) ++y;
+       
+        var cords = Engine.getNewCords(this.x, this.y, this.dir);
         
-
-        if(Engine.fullMap[x][y].block_id == ItemsList.dirt){
+        var x = cords.x;
+        var y = cords.y;    
             
-            Engine.fullMap[x][y].block_id = ItemsList.boomerang_prime;
-            Engine.fullMap[x][y].animCount = this.animCount;
-            Engine.fullMap[x][y].dir = this.dir;
-            Engine.fullMap[x][y].l = this.l;
-            Engine.fullMap[x][y].l++;
+        var block = Engine.fullMap[x][y];
+        if(block.block_id == ItemsList.dirt){
+            
+            block.block_id = ItemsList.boomerang_prime;
+            block.animCount = this.animCount;
+            block.dir = this.dir;
+            block.l = this.l;
+            block.l++;
 
             
-            if(this.l > 2){
-
-                if(Engine.fullMap[x][y].dir == 0){
-                     Engine.fullMap[x][y].dir = 2;
-                } else if(Engine.fullMap[x][y].dir == 1) {
-                    Engine.fullMap[x][y].dir = 3;
-                } else if(Engine.fullMap[x][y].dir == 2) {
-                    Engine.fullMap[x][y].dir = 0;
-                } else if(Engine.fullMap[x][y].dir == 3){
-                    Engine.fullMap[x][y].dir = 1;  
-                }
-                
-                Engine.fullMap[x][y].l = 0;
+            if(this.l > 2){                
+                block.dir = Engine.swapDirection(block.dir);
+                block.l = 0;
             }
             
             changeBlock(this, ItemsList.dirt);
             
             if(x == Engine.GetPlayerCords().x && y == Engine.GetPlayerCords().y){
-                changeBlock(Engine.fullMap[x][y], ItemsList.dirt);
+                changeBlock(block, ItemsList.dirt);
                 Engine.addToInvetory(ItemsList.boomerang);
             }
             
         } else {
             
-            if(Engine.fullMap[x][y].block_id.type == 'creature'){
-                Engine.fullMap[x][y].hp--;
-                if(Engine.fullMap[x][y].hp <= 0){
-                    var drops = Engine.fullMap[x][y].block_id.drop();
-                    changeBlock(Engine.fullMap[x][y], drops[rng(0, drops.length-1)]);
-                    resetAnimation(Engine.fullMap[x][y].block_id);
+            if(block.block_id.type == 'creature'){
+                block.hp--;
+                if(block.hp <= 0){
+                    var drops = block.block_id.drop();
+                    changeBlock(block, drops[rng(0, drops.length-1)]);
+                    resetAnimation(block.block_id);
                 }
             }
             changeBlock(this, ItemsList.boomerang);
@@ -1187,6 +1144,10 @@ function changeBlock(b_id, b_replacement, callback){
     }
 }
 
+function swapBlocks(a, b, callback){
+    b.block_id = [a.block_id, a.block_id = b.block_id][0];
+}
+
 //changeOnUse(this, ItemsList.dirt, ItemsList.water, ItemsList.bucket);
 function changeOnUse(b_id, b_use, b_replacement, i_replcement, callback){
     if(b_id.block_id != b_use) return;
@@ -1212,4 +1173,11 @@ function resetAnimation(block){
 
 function addItem(id, object){
     MapObjects[id] = object;
+}
+function blockDirectionLoop(block, callback){
+    if(typeof callback !== 'function') return;
+    for(var i = 0; i < 4; i++){
+        var cords = Engine.getNewCords(block.x, block.y, i);
+        callback.bind(Engine.fullMap[cords.x][cords.y])();
+    }
 }

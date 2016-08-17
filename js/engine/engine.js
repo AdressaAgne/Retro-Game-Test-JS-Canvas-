@@ -14,6 +14,7 @@ window.requestAnimFrame = (function () {
 
 // Game Engine
 var Engine = {
+    version : 'Alpha 0.1',
     
 ///////////////////////////////////
 //      VARIABLES
@@ -478,11 +479,13 @@ Engine.RenderRect = function(color, x, y, w, h){
 }
 
 Engine.RenderMenu = function(){
-   
     this.RenderMenuBackgroud();
     for(var i = 0; i < this.menu.buttons.length; i++){
         this.drawMenuButton(530 + (i*24*4), (i == this.menu.selectedButton), this.menu.buttons[i].text);
     }
+    
+    this.RenderText("#f8f8f8", this.version, 1, 18);
+    
 }
 
 Engine.RenderMenuBackgroud = function(){
@@ -645,10 +648,9 @@ Engine.moveBlockDirection = function(item, dir){
     var x = item.x;
     var y = item.y;
 
-    if(dir == 0) --x;
-    if(dir == 1) --y;
-    if(dir == 2) ++x;
-    if(dir == 3) ++y;
+    var cords = this.getNewCords(x, y, dir);
+    x = cords.x;
+    y = cords.y;
 
     var newItem = this.fullMap[x][y];
 
@@ -657,21 +659,30 @@ Engine.moveBlockDirection = function(item, dir){
     if(typeof newItem.block_id == 'undefined') return;
     
     if(newItem.block_id !== MapObjects['ffffff']) return;
-    
-    this.switchBlock(item, newItem);
-    
 }
 
-Engine.switchBlock = function(block, newBlock){
+Engine.getNewCords = function(x, y, dir){
     
+    if(dir == 0) --x;
+    if(dir == 1) --y;
+    if(dir == 2) ++x;
+    if(dir == 3) ++y;
+    
+    return {x : x, y : y};
 }
 
-//Go one level up on map
+Engine.swapDirection = function(dir){
+    if(dir == 0) return 2;
+    if(dir == 1) return 3;
+    if(dir == 2) return 0;
+    if(dir == 3) return 1;
+}
 
 Engine.loadNextMap = function(){
     this.wipeInvetory();
     if(this.currentMapNr == 'menu'){
         this.renderMenu = true;
+        this.currentMapNr = 0;
         return null;
     }
     this.fog = Maps[this.currentMapNr].fog; // Set map Fog
