@@ -72,6 +72,8 @@ var Engine = {
     
     Items           : {},
     
+    renderBlowAnim  : {},
+    
     dialogOpen      : false,
     dialogTitle     : '',
     dialogText      : '',
@@ -178,8 +180,19 @@ var Engine = {
     
     renderBlock : function(item){
         // Animated Block    
+        if(typeof item.block_id.renderBelow !== 'undefined'){
+            if(typeof this.renderBlowAnim[item.x+'-'+item.y] === 'undefined'){
+                this.renderBlowAnim[item.x+'-'+item.y] = {
+                    x : item.x,
+                    y : item.y,
+                    block_id : item.block_id.renderBelow(),
+                }
+            }
+            this.renderBlock(this.renderBlowAnim[item.x+'-'+item.y]);
+        }
+        
         if(typeof item.block_id.anim !== 'undefined'){ 
-
+            
             if(typeof item.animCount == 'undefined') item.animCount = rng(0, item.block_id.anim.length-1);
             this.drawFromAnimSprite(item.block_id.anim[item.animCount], item.x, item.y);
 
@@ -197,9 +210,8 @@ var Engine = {
     },
     
     renderBlockGui : function(block, x, y){
-        // Animated Block    
+        // Animated Block
         if(typeof block.anim !== 'undefined'){ 
-
             if(typeof this.animCount[block.name] == 'undefined') this.animCount[block.name] = rng(0, block.anim.length-1);
             this.drawFromAnimSpriteGui(block.anim[this.animCount[block.name]], x, y);
 
@@ -209,8 +221,6 @@ var Engine = {
                     this.animCount[block.name] = 0;
                 }
             }
-            
-        // Static Block
         } else { 
             this.drawFromAnimSpriteGui(block, x, y);
         }

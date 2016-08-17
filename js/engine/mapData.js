@@ -62,6 +62,17 @@ addItem('ffffff', {
     x           : 0,
     y           : 0,
 });
+addItem('cracked_dirt', {
+    name        : 'cracked_dirt',
+    alternative : function(){
+        return [ItemsList.dirt];
+    },
+    solid       : false,
+    moveable    : false,
+    type        : 'block',
+    x           : 5,
+    y           : 1,
+});
 
 addItem('00ff00', {
     name        : 'chest',
@@ -857,7 +868,7 @@ addItem('tnt_boom', {
             
             blockDirectionLoop(this, function(){
                 var item = canDestroy[i];
-                if(this.block_id == item) changeBlock(this, ItemsList.dirt); 
+                if(this.block_id == item) changeBlock(this, ItemsList.explotion); 
             });
         }
         
@@ -1134,6 +1145,72 @@ addItem('error', {
     x : 6,
     y : 15,
 });
+
+
+addItem('9b701d', {
+    name        : 'bridge',
+    solid       : false,
+    alternative : function(){
+        return [ItemsList.bridge_2, ItemsList.bridge_3];
+    },
+    moveable    : false,
+    type        : 'block',
+    renderBelow : function(){
+        return ItemsList.water;
+    },
+    x : 8,
+    y : 0,
+});
+
+addItem('bridge_2', {
+    name        : 'bridge_2',
+    solid       : false,
+    moveable    : false,
+    type        : 'block',
+    renderBelow : function(){
+        return ItemsList.water;
+    },
+    x : 9,
+    y : 0,
+});
+addItem('bridge_3', {
+    name        : 'bridge_3',
+    solid       : false,
+    moveable    : false,
+    type        : 'block',
+    renderBelow : function(){
+        return ItemsList.water;
+    },
+    x : 8,
+    y : 1,
+});
+
+addItem('7e5a14', {
+    name        : 'broken_bridge',
+    solid       : true,
+    moveable    : false,
+    type        : 'block',
+    renderBelow : function(){
+        return ItemsList.water;
+    },
+    x : 7,
+    y : 0,
+});
+
+addItem('9f7729', {
+    name        : 'plank',
+    solid       : false,
+    moveable    : false,
+    canPickUp   : true,
+    type        : 'item',
+    onUse       : function(){
+        removeOnUse(this, ItemsList.broken_bridge, ItemsList.bridge_3);
+    },
+    x : 7,
+    y : 1,
+});
+
+
 
 function changeBlock(b_id, b_replacement, callback){
     b_id.block_id = b_replacement;
